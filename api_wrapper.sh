@@ -3,235 +3,261 @@
 # 获取当前脚本所在的绝对目录，保证能在任何地方被 OpenClaw 准确调用
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-# ============================================================
-# 安全措施说明：
-# 1. API Key 从 .env 文件读取（跨平台通用）
-# 2. .env 文件自动设置 600 权限（仅所有者可读写）
-# 3. Token 缓存文件设置 600 权限
-# 4. 不在日志/输出中暴露 API Key 和 Token
-# 5. 使用 -s 静默 curl，避免凭证泄露到终端
-# 6. 移除硬编码的备用 JWT Token
-# ============================================================
+# 1. 基础配置（从环境变量或配置文件读取，不再硬编码敏感信息）
+CONFIG_FILE="${LYNSE_CONFIG_FILE:-$DIR/.env}"
 
-# 1. 基础配置
-API_HOST="http://119.97.160.133:10060"  # 所有API请求的基础地址
-# API_HOST="http://10.246.52.153:10060" # 本地服
-
-# 2. 安全读取 API Key（优先级：环境变量 > .env 文件）
-ENV_FILE="$DIR/.env"
-
-read_api_key() {
-    # 优先级 1: 环境变量
-    if [ -n "${LYNSE_API_KEY:-}" ]; then
-        echo "$LYNSE_API_KEY"
-        return 0
-    fi
-
-    # 优先级 2: .env 文件（自动确保权限安全）
-    if [ -f "$ENV_FILE" ]; then
-        # 自动修复权限：仅所有者可读写
-        chmod 600 "$ENV_FILE" 2>/dev/null
-        local key
-        key=$(grep -E '^LYNSE_API_KEY=' "$ENV_FILE" | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'")
-        if [ -n "$key" ]; then
-            echo "$key"
-            return 0
-        fi
-    fi
-
-    return 1
-}
-
-API_KEY=$(read_api_key)
-
-# 3. 凭证预检
-if [ -z "$API_KEY" ]; then
-    echo "LYNSE API KEY 未配置！"
-    echo ""
-    echo "请在 $(dirname "$0")/.env 文件中配置 API Key："
-    echo '  echo "LYNSE_API_KEY=你的API_Key" > ~/.claude/skills/lynse/.env && chmod 600 ~/.claude/skills/lynse/.env'
-    echo ""
-    echo "或通过环境变量（会话级别）："
-    echo '  export LYNSE_API_KEY="你的API_Key"'
-    echo ""
-    echo "获取 API Key：联系管理员或从系统控制台获取（dk_xxx 格式）"
-    exit 1
+# 加载配置文件（如果存在）
+if [ -f "$CONFIG_FILE" ]; then
+    # 安全地逐行读取，只处理 KEY=VALUE 格式，忽略注释和空行
+    while IFS='=' read -r key value; do
+        # 跳过注释和空行
+        [[ "$key" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "$key" ]] && continue
+        # 去除前后空白
+        key=$(echo "$key" | xargs)
+        value=$(echo "$value" | xargs)
+        # 只允许已知配置项
+        case "$key" in
+            LYNSE_API_HOST|LYNSE_API_KEY|LYNSE_OWNER_ID) export "$key"="$value" ;;
+        esac
+    done < "$CONFIG_FILE"
 fi
 
-# 4. Token 缓存文件（安全权限）
-TOKEN_FILE="/tmp/.lynse_token_cache_$USER"
-ensure_token_file_perms() {
-    if [ -f "$TOKEN_FILE" ]; then
-        chmod 600 "$TOKEN_FILE" 2>/dev/null
-    fi
-}
+# 从环境变量读取，未设置时给出明确提示
+API_HOST="${LYNSE_API_HOST:?错误：未设置 LYNSE_API_HOST 环境变量。请设置后重试，例如：export LYNSE_API_HOST=https://your-api-host:port}"
+API_KEY="${LYNSE_API_KEY:?错误：未设置 LYNSE_API_KEY 环境变量。请设置后重试，例如：export LYNSE_API_KEY=dk_your_api_key_here}"
 
-# 5. 静默获取 Token（不输出凭证信息）
-get_token_via_apikey() {
-    local response
-    response=$(curl -s -X POST "$API_HOST/api/auth/apikey/token" \
-        --header @- <<EOF_HEADER 2>/dev/null
-X-API-Key: $API_KEY
-EOF_HEADER
-    )
-    echo "$response" | grep -o '"accessToken":"[^"]*"' | cut -d'"' -f4
-}
+# Token 缓存文件路径（使用安全权限）
+TOKEN_FILE="${LYNSE_TOKEN_FILE:-$DIR/.token_cache}"
 
-ensure_valid_token() {
-    ensure_token_file_perms
+# 2. 自动路由到统一CLI，并传递API_HOST参数
+"$DIR/lynse_unified.sh" --host "$API_HOST" "$@"
 
-    if [ -f "$TOKEN_FILE" ]; then
-        local cached_token
-        cached_token=$(cat "$TOKEN_FILE")
-        # 静默验证 Token
-        local http_code
-        http_code=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "$API_HOST/api/business/customer/current" \
-            -H "Authorization: $cached_token" \
-            -H "X-API-Key: $API_KEY" 2>/dev/null)
-        if [ "$http_code" -eq 200 ]; then
-            TOKEN="$cached_token"
-            return 0
-        fi
-    fi
+# 保留原API接口作为备用
+# 3. 接收大模型传来的参数
+ACTION=$1
+shift
+# 安全处理参数：防止注入，对参数进行基本转义
+PARAMS=""
+for param in "$@"; do
+    # 移除潜在的命令注入字符
+    sanitized=$(echo "$param" | sed 's/[;$`]//g; s/\.\.//g')
+    PARAMS="$PARAMS $sanitized"
+done
+PARAMS=$(echo "$PARAMS" | xargs)
 
-    # 缓存无效，重新获取
-    local new_token
-    new_token=$(get_token_via_apikey)
-    if [ -n "$new_token" ] && [ "$new_token" != "null" ]; then
-        echo "$new_token" > "$TOKEN_FILE"
-        chmod 600 "$TOKEN_FILE"
-        TOKEN="$new_token"
+# 安全函数：验证Token格式（JWT基本格式检查）
+validate_token() {
+    local token="$1"
+    # JWT格式：三段base64由.连接
+    if [[ "$token" =~ ^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$ ]]; then
         return 0
     fi
-
-    # API Key 获取失败
-    echo "API Key 认证失败，请检查 Key 是否有效"
     return 1
 }
 
-# 获取有效 Token
-ensure_valid_token || exit 1
+# 尝试从缓存获取Token或刷新
+if [ -f "$TOKEN_FILE" ]; then
+    # 检查文件权限，确保只有文件所有者可读写
+    chmod 600 "$TOKEN_FILE" 2>/dev/null
+    API_TOKEN=$(cat "$TOKEN_FILE")
+    if validate_token "$API_TOKEN"; then
+        # 验证Token是否有效
+        VALID_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$API_HOST/api/business/customer/current" -H "Authorization: $API_TOKEN" -H "X-API-Key: $API_KEY")
+        if [ "$VALID_RESPONSE" -eq 200 ]; then
+            TOKEN="$API_TOKEN"
+        else
+            # 缓存Token无效，重新获取
+            API_TOKEN=$(curl -s -X POST "$API_HOST/api/auth/apikey/token" -H "X-API-Key: $API_KEY" | grep -o '"accessToken":"[^"]*"' | cut -d'"' -f4)
+            if [ "$API_TOKEN" != "null" ] && [ -n "$API_TOKEN" ] && validate_token "$API_TOKEN"; then
+                echo "$API_TOKEN" > "$TOKEN_FILE"
+                chmod 600 "$TOKEN_FILE" 2>/dev/null
+                TOKEN="$API_TOKEN"
+            else
+                echo "API Key认证失败，请检查 LYNSE_API_KEY 是否正确" >&2
+                exit 1
+            fi
+        fi
+    else
+        # 缓存Token格式无效，清除并重新获取
+        rm -f "$TOKEN_FILE"
+        API_TOKEN=$(curl -s -X POST "$API_HOST/api/auth/apikey/token" -H "X-API-Key: $API_KEY" | grep -o '"accessToken":"[^"]*"' | cut -d'"' -f4)
+        if [ "$API_TOKEN" != "null" ] && [ -n "$API_TOKEN" ] && validate_token "$API_TOKEN"; then
+            echo "$API_TOKEN" > "$TOKEN_FILE"
+            chmod 600 "$TOKEN_FILE" 2>/dev/null
+            TOKEN="$API_TOKEN"
+        else
+            echo "API Key认证失败，请检查 LYNSE_API_KEY 是否正确" >&2
+            exit 1
+        fi
+    fi
+else
+    # 无缓存，首次获取Token
+    API_TOKEN=$(curl -s -X POST "$API_HOST/api/auth/apikey/token" -H "X-API-Key: $API_KEY" | grep -o '"accessToken":"[^"]*"' | cut -d'"' -f4)
+    if [ "$API_TOKEN" != "null" ] && [ -n "$API_TOKEN" ] && validate_token "$API_TOKEN"; then
+        # 确保缓存目录存在且权限正确
+        mkdir -p "$(dirname "$TOKEN_FILE")" 2>/dev/null
+        echo "$API_TOKEN" > "$TOKEN_FILE"
+        chmod 600 "$TOKEN_FILE" 2>/dev/null
+        TOKEN="$API_TOKEN"
+    else
+        echo "API Key认证失败，请检查 LYNSE_API_KEY 是否正确" >&2
+        exit 1
+    fi
+fi
 
-# 6. 自动路由到统一 CLI
-"$DIR/lynse_unified.sh" --host "$API_HOST" "$@"
+# Owner 权限检查：若配置了 LYNSE_OWNER_ID，验证当前用户是否匹配
+if [ -n "$LYNSE_OWNER_ID" ]; then
+    CURRENT_USER_ID=$(curl -s -X GET "$API_HOST/api/business/customer/current" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+    if [ -n "$CURRENT_USER_ID" ] && [ "$CURRENT_USER_ID" != "$LYNSE_OWNER_ID" ]; then
+        echo "抱歉，这是私密账户，我无法操作" >&2
+        exit 1
+    fi
+fi
 
-# 7. 语义化路由（复用已获取的 Token）
-ACTION=$1
-shift
-PARAMS="$*"
+# 安全函数：转义参数中的特殊字符，防止HTTP头注入
+sanitize_header_value() {
+    echo "$1" | tr -d '\r\n' | sed 's/"/\\"/g'
+}
 
+# 安全函数：构建JSON body，防止注入
+safe_json_string() {
+    echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr -d '\n\r'
+}
+
+# 3. 语义化路由
 case $ACTION in
-    # 用户信息
+    # 常用接口
     "getCurrentCustomer")
         curl -s -X GET "$API_HOST/api/business/customer/current" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
     "getUserInfo")
-        curl -s -X GET "$API_HOST/sysUser/info" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$1"
+        SAFE_ID=$(sanitize_header_value "$1")
+        curl -s -X GET "$API_HOST/sysUser/info" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$SAFE_ID"
+        ;;
+    "getDevicePage")
+        SAFE_PAGE=$(echo "$1" | tr -cd '0-9')
+        curl -s -X GET "$API_HOST/deviceMgt/page9" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "pageNum:$SAFE_PAGE" -H "pageSize:10"
+        ;;
+    "getAiModels")
+        curl -s -X GET "$API_HOST/ai/getAllAIModelList" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
     "getUserPoints")
         RESPONSE=$(curl -s -X GET "$API_HOST/api/business/customer/current" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY")
         POINTS=$(echo "$RESPONSE" | grep -o '"pointsAmount":[0-9]*' | cut -d: -f2)
         USED_POINTS=$(echo "$RESPONSE" | grep -o '"usedPointsAmount":[0-9]*' | cut -d: -f2)
-        echo "当前积分: ${POINTS:-0}"
-        echo "已使用积分: ${USED_POINTS:-0}"
+        POINTS="${POINTS:-0}"
+        USED_POINTS="${USED_POINTS:-0}"
+        echo "当前积分: $POINTS"
+        echo "已使用积分: $USED_POINTS"
         ;;
     "getUserPhone")
         RESPONSE=$(curl -s -X GET "$API_HOST/api/business/customer/current" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY")
         echo "$RESPONSE" | grep -o '"phone":"[0-9*]*"' | cut -d: -f2 | tr -d '"'
         ;;
 
-    # 文件管理
+    # 文件管理接口
     "listFiles")
         curl -s -X GET "$API_HOST/api/business/file/list" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
     "getFileInfo")
-        curl -s -X GET "$API_HOST/api/business/file/info?fileId=$1" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
+        SAFE_ID=$(echo "$1" | tr -cd '0-9')
+        curl -s -X GET "$API_HOST/api/business/file/info?fileId=$SAFE_ID" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
     "getConclusion")
-        curl -s -X GET "$API_HOST/api/business/file/conclusion/list?fileId=$1" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
+        SAFE_ID=$(echo "$1" | tr -cd '0-9')
+        curl -s -X GET "$API_HOST/api/business/file/conclusion/list?fileId=$SAFE_ID" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
     "getConclusionList")
-        curl -s -X GET "$API_HOST/api/business/file/conclusion/list?fileId=$1" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
+        SAFE_ID=$(echo "$1" | tr -cd '0-9')
+        curl -s -X GET "$API_HOST/api/business/file/conclusion/list?fileId=$SAFE_ID" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
     "getOutline")
-        curl -s -X GET "$API_HOST/api/business/file/outline/get?fileId=$1" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
+        SAFE_ID=$(echo "$1" | tr -cd '0-9')
+        curl -s -X GET "$API_HOST/api/business/file/outline/get?fileId=$SAFE_ID" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
     "exportOutline")
-        curl -s -X GET "$API_HOST/api/business/file/outline/export?fileId=$1" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
-        ;;
-    "getTranscriptionRecord")
-        curl -s -X GET "$API_HOST/api/business/file/trans/get?fileId=$1" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
+        SAFE_ID=$(echo "$1" | tr -cd '0-9')
+        curl -s -X GET "$API_HOST/api/business/file/outline/export?fileId=$SAFE_ID" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
     "listFilesByTimeRange")
         if [ -n "$1" ]; then
-            startTime=$(date -d "$1 ago" +'%Y-%m-%dT%H:%M:%S' 2>/dev/null || date -v-"${1}"d +'%Y-%m-%dT%H:%M:%S')
+            SAFE_DAYS=$(echo "$1" | tr -cd '0-9')
+            startTime=$(date -d "$SAFE_DAYS ago" +'%Y-%m-%dT%H:%M:%S')
         else
-            startTime=$(date -d '7 days ago' +'%Y-%m-%dT%H:%M:%S' 2>/dev/null || date -v-7d +'%Y-%m-%dT%H:%M:%S')
+            startTime=$(date -d '7 days ago' +'%Y-%m-%dT%H:%M:%S')
         fi
         endTime=$(date +'%Y-%m-%dT%H:%M:%S')
         curl -s -X GET "$API_HOST/api/business/file/timeRange/list?startTime=$startTime&endTime=$endTime" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
-
-    # AI 模型管理
-    "getAiModels")
-        curl -s -X GET "$API_HOST/ai/getAllAIModelList" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
+    "getTranscriptionRecord")
+        SAFE_ID=$(echo "$1" | tr -cd '0-9')
+        curl -s -X GET "$API_HOST/api/business/file/trans/get?fileId=$SAFE_ID" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
+
+    # AI模型管理（接受JSON body的接口，使用文件传递而非命令行拼接）
     "addModel")
-        curl -s -X POST "$API_HOST/ai/addModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d "$PARAMS"
+        echo "$PARAMS" | curl -s -X POST "$API_HOST/ai/addModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d @-
         ;;
     "deleteModel")
-        curl -s -X DELETE "$API_HOST/ai/deleteModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$1"
+        SAFE_ID=$(sanitize_header_value "$1")
+        curl -s -X DELETE "$API_HOST/ai/deleteModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$SAFE_ID"
         ;;
     "editModel")
-        curl -s -X POST "$API_HOST/ai/editModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d "$PARAMS"
+        echo "$PARAMS" | curl -s -X POST "$API_HOST/ai/editModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d @-
         ;;
     "enableModel")
-        curl -s -X POST "$API_HOST/ai/enableModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$1" -H "enabled:$2"
+        SAFE_ID=$(sanitize_header_value "$1")
+        SAFE_ENABLED=$(echo "$2" | tr -cd 'a-zA-Z')
+        curl -s -X POST "$API_HOST/ai/enableModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$SAFE_ID" -H "enabled:$SAFE_ENABLED"
         ;;
 
     # 设备管理
-    "getDevicePage")
-        curl -s -X GET "$API_HOST/deviceMgt/page9" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "pageNum:$1" -H "pageSize:10"
-        ;;
     "getDeviceInfo")
-        curl -s -X GET "$API_HOST/deviceMgt/info5" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$1"
+        SAFE_ID=$(sanitize_header_value "$1")
+        curl -s -X GET "$API_HOST/deviceMgt/info5" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$SAFE_ID"
         ;;
     "unbindDevice")
-        curl -s -X POST "$API_HOST/deviceMgt/unbind" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$1"
+        SAFE_ID=$(sanitize_header_value "$1")
+        curl -s -X POST "$API_HOST/deviceMgt/unbind" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$SAFE_ID"
         ;;
 
-    # 系统用户管理
+    # 用户管理（使用stdin传递JSON body）
     "getCurrentUser")
         curl -s -X GET "$API_HOST/sysUser/current" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
     "addUser")
-        curl -s -X POST "$API_HOST/sysUser/add2" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d "$PARAMS"
+        echo "$PARAMS" | curl -s -X POST "$API_HOST/sysUser/add2" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d @-
         ;;
     "editUser")
-        curl -s -X POST "$API_HOST/sysUser/edit1" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d "$PARAMS"
+        echo "$PARAMS" | curl -s -X POST "$API_HOST/sysUser/edit1" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d @-
         ;;
     "removeUser")
-        curl -s -X POST "$API_HOST/sysUser/remove" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$1"
+        SAFE_ID=$(sanitize_header_value "$1")
+        curl -s -X POST "$API_HOST/sysUser/remove" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$SAFE_ID"
         ;;
 
-    # 登录
+    # 登录相关
     "login")
-        curl -s -X POST "$API_HOST/sysLogin/login" -H "Content-Type: application/json" -d "{\"username\":\"$1\",\"password\":\"$2\"}"
+        SAFE_USER=$(safe_json_string "$1")
+        SAFE_PASS=$(safe_json_string "$2")
+        curl -s -X POST "$API_HOST/sysLogin/login" -H "Content-Type: application/json" -d "{\"username\":\"$SAFE_USER\",\"password\":\"$SAFE_PASS\"}"
         ;;
     "loginWithPhone")
-        curl -s -X POST "$API_HOST/sysLogin/login" -H "Content-Type: application/json" -d "{\"phone\":\"$1\",\"captcha\":\"$2\"}"
+        SAFE_PHONE=$(safe_json_string "$1")
+        SAFE_CODE=$(safe_json_string "$2")
+        curl -s -X POST "$API_HOST/sysLogin/login" -H "Content-Type: application/json" -d "{\"phone\":\"$SAFE_PHONE\",\"captcha\":\"$SAFE_CODE\"}"
         ;;
     "logout")
         curl -s -X POST "$API_HOST/sysLogin/logout" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
 
-    # 消息
+    # 消息管理（使用stdin传递JSON body）
     "sendSms")
-        curl -s -X POST "$API_HOST/message/sendSmsMessage" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d "$PARAMS"
+        echo "$PARAMS" | curl -s -X POST "$API_HOST/message/sendSmsMessage" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d @-
         ;;
     "sendEmail")
-        curl -s -X POST "$API_HOST/message/sendEmailMessage" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d "$PARAMS"
+        echo "$PARAMS" | curl -s -X POST "$API_HOST/message/sendEmailMessage" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d @-
         ;;
 
     # 系统管理
@@ -242,9 +268,10 @@ case $ACTION in
         curl -s -X GET "$API_HOST/sysMenu/tree" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
 
+    # 默认情况
     *)
-        echo "Error: 不支持的 Action $ACTION。"
-        echo "支持的操作: getCurrentCustomer, getUserInfo, getUserPoints, getUserPhone, listFiles, getFileInfo, getConclusion, getOutline, exportOutline, getTranscriptionRecord, listFilesByTimeRange, getAiModels, addModel, deleteModel, editModel, enableModel, getDevicePage, getDeviceInfo, unbindDevice, getCurrentUser, addUser, editUser, removeUser, login, loginWithPhone, logout, sendSms, sendEmail, getRoleList, getMenuTree"
+        echo "Error: 不支持的 Action $ACTION。" >&2
+        echo "支持的操作包括: getCurrentCustomer, getUserInfo, getDevicePage, getAiModels, getUserPoints, getUserPhone, listFiles, getFileInfo, getConclusion, getConclusionList, getOutline, exportOutline, getTranscriptionRecord, addModel, deleteModel, editModel, enableModel, getDeviceInfo, unbindDevice, getCurrentUser, addUser, editUser, removeUser, login, loginWithPhone, logout, sendSms, sendEmail, getRoleList, getMenuTree" >&2
         exit 1
         ;;
 esac

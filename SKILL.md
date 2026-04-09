@@ -1,100 +1,198 @@
 ---
 name: lynse-cli
-description: |
-  Use when users mention Lynse backend API operations: querying user info, managing files,
-  device management, AI model management, points/balance inquiry, transcription, conclusions,
-  outlines, or system admin tasks. Also use when users say "查用户"、"文件列表"、"转写记录"、
-  "总结"、"大纲"、"设备"、"模型"、"积分" or any backend API interaction in Chinese.
+description: Lynse CLI 工具，调用 lynse.ai 后端服务的 API。当用户需要查询 lynse 账户信息、管理文件/转写/总结、操作设备、管理 AI 模型、团队协作、发送消息时使用此技能。即使只是简单查个积分或看个文件列表，也应使用此技能。
+version: 1.2.0
+metadata:
+  openclaw:
+    requires:
+      env:
+        - LYNSE_API_HOST
+        - LYNSE_API_KEY
+      bins:
+        - curl
+        - bash
+    primaryEnv: LYNSE_API_KEY
+    homepage: https://www.lynse.ai
+    emoji: "\U0001F4CB"
 ---
 
-# lynse - Lynse Java Backend API CLI
+# Lynse CLI Skill
 
-Unified Lynse backend API skill. Modules: **customer**, **file**, **admin**.
+## ⚠️ Agent 必读约束
 
-## Setup
+### 🌐 Base URL
+```
+$LYNSE_API_HOST
+```
+Base URL 通过环境变量配置，不硬编码。所有 API 请求必须使用此变量，不要猜测或自行构造地址。
 
-Configure API Key (priority order):
+### 🔑 认证
+Lynse 使用 **API Key + 临时 Token** 双层认证：
 
-1. **.env file (recommended, cross-platform):**
-   ```bash
-   echo "LYNSE_API_KEY=dk_xxx" > ~/.claude/skills/lynse-cli/.env && chmod 600 ~/.claude/skills/lynse-cli/.env
-   ```
-2. **Environment variable (session-level):** `export LYNSE_API_KEY="dk_xxx"`
+```
+第一步：用 API Key 换取 Token
+POST $LYNSE_API_HOST/api/auth/apikey/token
+Header: X-API-Key: $LYNSE_API_KEY
 
-`API_HOST` defaults to `http://119.97.160.133:10060`, configurable in `api_wrapper.sh`. Token is auto-managed.
-
-## Credential Pre-check (CRITICAL)
-
-**Before calling any API, check if API Key is configured.**
-
-```bash
-# Quick check
-test -f ~/.claude/skills/lynse-cli/.env && grep -q '^LYNSE_API_KEY=.' ~/.claude/skills/lynse-cli/.env && echo "CONFIGURED" || echo "NOT_CONFIGURED"
+第二步：用 Token 调用业务接口
+Header: Authorization: <accessToken>    （不带 Bearer 前缀）
+Header: X-API-Key: $LYNSE_API_KEY
 ```
 
-**If API Key is NOT configured:**
+- **API Key 格式**：`dk_xxx`（从系统控制台获取）
+- **Token 有效期**：2 小时，过期自动刷新
+- **Token 缓存**：本地文件，权限 600（仅所有者可读写）
 
-> **STOP and ask the user:** "You haven't configured your Lynse API Key yet. Please provide your API Key (dk_xxx format, obtain from admin console), and I'll save it to .env file."
->
-> After user provides the key:
-> ```bash
-> echo "LYNSE_API_KEY=用户提供的key" > ~/.claude/skills/lynse-cli/.env && chmod 600 ~/.claude/skills/lynse-cli/.env
-> ```
-> Then proceed with the API call.
-
-**If API Key IS configured:** Proceed with `api_wrapper.sh <command>` directly.
-
-## Security Measures
-
-| Measure | Detail |
-|---|---|
-| .env file storage | Cross-platform, skill directory scoped |
-| File permissions | .env & token cache auto-set to `chmod 600` (owner-only) |
-| No hardcoded secrets | No JWT tokens or API keys in source code |
-| Silent curl | All `curl -s` to prevent credentials leaking to terminal |
-| No credential echo | Script never prints API Key or Token in output |
-| Token cache isolation | Cache at `/tmp/.lynse_token_cache_$USER` (per-user, hidden) |
-| .gitignore friendly | .env files should be added to .gitignore |
-
-## API Call Method
-
-All calls go through the semantic wrapper:
-
+**每次调用前检查 `$LYNSE_API_KEY` 和 `$LYNSE_API_HOST` 是否存在**。若不存在，提示用户完成配置：
 ```bash
-# Invoke via api_wrapper.sh (auto-handles token)
-~/.claude/skills/lynse-cli/api_wrapper.sh <command> [params...]
+# 方式一：环境变量
+export LYNSE_API_HOST="https://your-api-host:port"
+export LYNSE_API_KEY="dk_your_api_key_here"
 
-# Or use unified CLI directly (bypasses semantic wrapper):
-~/.claude/skills/lynse-cli/lynse_unified.sh <cli-command> [params...]
+# 方式二：配置文件（复制模板后填入）
+cp .env.example .env
 ```
 
-**Auth headers:** `Authorization: <token>` (no Bearer prefix) + `X-API-Key: <api_key>`
+配置完成后再继续执行用户原本的请求。
 
-## Module Decision Table
+### 🔐 Scope 权限
+不同操作需要对应权限，权限由 API Key 绑定的角色决定：
 
-| User Intent | Module | Read |
-|---|---|---|
-| Query current user info, phone, points, edit user, register, recharge, list users | customer | `customer/SKILL.md` |
-| List files, file info, conclusions, outlines, transcription, upload/download, audio merge, delete/recover | file | `file/SKILL.md` |
-| Device management, AI model CRUD, roles, menu tree, SMS/email, folders, teams | admin | `admin/SKILL.md` |
+| Scope | 说明 | 典型操作 |
+|-------|------|----------|
+| `customer.read` | 读取用户信息 | getCurrentCustomer, getUserInfo |
+| `customer.write` | 编辑用户 | addUser, editUser, removeUser |
+| `file.read` | 读取文件/转写/总结 | listFiles, getFileInfo, getConclusion, getOutline |
+| `file.write` | 编辑文件内容 | editConclusion, editOutline, editTransRecord |
+| `device.read` | 读取设备信息 | getDeviceInfo, getDevicePage |
+| `device.manage` | 管理设备 | unbindDevice |
+| `ai.read` | 查看 AI 模型 | getAiModels |
+| `ai.manage` | 管理 AI 模型 | addModel, editModel, deleteModel, enableModel |
+| `message.send` | 发送消息 | sendSms, sendEmail |
+| `team.read` | 查看团队 | listMyTeam |
+| `team.manage` | 管理团队 | createTeam, editTeam, removeTeamMember |
 
-### Quick Reference — Most Used Commands
+权限不足时 API 返回 HTTP 403，引导用户联系管理员升级权限。
 
-| Command | Description | Module |
-|---|---|---|
-| `getCurrentCustomer` | Get current user full info (phone, points, etc.) | customer |
-| `getUserPoints` | Get current user points balance | customer |
-| `listFiles` | List all user files | file |
-| `getFileInfo <fileId>` | Get file detail by ID | file |
-| `getConclusion <fileId>` | Get file conclusions | file |
-| `getOutline <fileId>` | Get file outline | file |
-| `getTranscriptionRecord <fileId>` | Get transcription record | file |
-| `getAiModels` | List all AI models | admin |
-| `getDevicePage <pageNum>` | Paginated device list | admin |
+### 🔒 安全规则
+- 用户数据属于隐私，不在群聊/公开场合主动展示用户手机号、积分等敏感字段
+- 若配置了 `LYNSE_OWNER_ID`，检查当前操作用户 ID 是否匹配；不匹配时回复「抱歉，这是私密账户，我无法操作」
+- Token 失效时自动刷新，刷新失败则提示用户检查 API Key 配置
+- 创建/编辑操作建议间隔 1 分钟以上，避免触发服务端限流
+- 所有用户输入参数经过转义后才传入 curl 命令，防止注入
 
-## Notes
+### ⚠️ 错误处理规则
+| 状态码 / 场景 | 处理方式 |
+|---------------|----------|
+| HTTP 401 | Token 过期 → 自动用 API Key 刷新重试 |
+| HTTP 403 | 权限不足 → 提示联系管理员 |
+| HTTP 429 | 限流 → 等待后重试，建议间隔 1 分钟 |
+| Token 刷新失败 | 提示检查 `LYNSE_API_KEY` 是否正确或已过期 |
+| 接口返回 `code != 200` | 展示错误信息，不静默忽略 |
 
-- **JSON params**: Must be wrapped in double quotes: `api_wrapper.sh addModel '{"name":"gpt-4"}'`
-- **Error handling**: API returns standard JSON with error messages; wrapper displays them directly
-- **jq optional**: Skill auto-adapts to environments without `jq`
-- **Cross-environment**: Copy entire lynse directory, update `API_KEY` in `api_wrapper.sh`, ready to use
+### 📦 CLI 版本路由
+技能同时支持两个 CLI 版本：
+- **lynse-cli-a**（基础版）：核心认证功能（login, register, token 管理等）
+- **lynse-cli-b**（增强版）：完整业务功能（文件、团队、AI、设备等）
+
+统一入口 `lynse_unified.sh` 自动检测并路由到可用版本。详细命令对照见 [compatibility.md](compatibility.md)。
+
+---
+
+## 调用方式
+
+```bash
+# 统一入口（推荐）
+./lynse_unified.sh <command> [参数...]
+
+# 或通过 api_wrapper.sh（集成自动 Token 管理）
+./api_wrapper.sh <command> [参数...]
+```
+
+---
+
+## 常用操作
+
+### 🔹 用户信息
+```bash
+java_backend getCurrentCustomer          # 当前用户完整信息
+java_backend getUserPhone                # 当前用户手机号
+java_backend getUserPoints               # 当前用户积分（含已用）
+java_backend getUserInfo <用户ID>        # 指定用户信息
+java_backend getCurrentUser              # 当前系统用户
+```
+
+### 🔹 文件管理
+```bash
+java_backend listFiles                         # 所有文件列表
+java_backend getFileInfo <fileId>              # 文件详情
+java_backend getConclusion <fileId>            # 文件总结
+java_backend getOutline <fileId>               # 文件大纲
+java_backend exportOutline <fileId>            # 导出大纲
+java_backend getTranscriptionRecord <fileId>   # 转写记录
+java_backend listFilesByTimeRange [天数]        # 按时间范围（默认7天）
+```
+
+### 🔹 AI 模型管理
+```bash
+java_backend getAiModels                        # 所有模型列表
+java_backend addModel '<JSON>'                  # 添加模型
+java_backend editModel '<JSON>'                 # 编辑模型
+java_backend deleteModel <模型ID>               # 删除模型
+java_backend enableModel <模型ID> <true/false>  # 启用/禁用
+```
+
+### 🔹 设备管理
+```bash
+java_backend getDevicePage <页码>      # 分页设备列表
+java_backend getDeviceInfo <设备ID>    # 设备详情
+java_backend unbindDevice <设备ID>     # 解绑设备
+```
+
+### 🔹 用户管理（需要 customer.write 权限）
+```bash
+java_backend addUser '<JSON>'          # 添加用户
+java_backend editUser '<JSON>'         # 编辑用户
+java_backend removeUser <用户ID>       # 删除用户
+```
+
+### 🔹 认证（推荐使用 API Key 自动认证，无需手动调用）
+```bash
+java_backend login <用户名> <密码>              # 用户名密码登录
+java_backend loginWithPhone <手机号> <验证码>   # 手机号登录
+java_backend logout                              # 登出
+```
+
+### 🔹 消息
+```bash
+java_backend sendSms '<JSON>'         # 发送短信
+java_backend sendEmail '<JSON>'       # 发送邮件
+```
+
+### 🔹 系统
+```bash
+java_backend getRoleList              # 角色列表
+java_backend getMenuTree              # 菜单树
+```
+
+---
+
+## 认证流程
+
+```
+用户调用 → api_wrapper.sh
+  → 检查 LYNSE_API_HOST / LYNSE_API_KEY
+    → 不存在 → 提示配置
+    → 存在 → 检查缓存 Token
+      → Token 有效 → 直接使用
+      → Token 无效/过期 → POST /api/auth/apikey/token 换取新 Token
+        → 成功 → 缓存（权限 600）→ 调用业务接口
+        → 失败 → 提示检查 API Key
+```
+
+---
+
+## 快速部署
+1. 复制整个 `lynse` 目录到目标实例的 `skills` 目录
+2. `cp .env.example .env`，填入 `LYNSE_API_HOST` 和 `LYNSE_API_KEY`
+3. 直接使用，无需其他配置
