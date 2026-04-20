@@ -627,7 +627,7 @@ class LynseAPI:
 def main():
     """CLI 入口函数"""
     if len(sys.argv) < 2:
-        print("Lynse CLI v1.3.1 - 跨平台 Python 版")
+        print("Lynse CLI v1.3.2 - 跨平台 Python 版")
         print("用法：python lynse.py <command> [参数...]")
         print("\n常用命令:")
         print("  getCurrentCustomer          - 当前用户信息")
