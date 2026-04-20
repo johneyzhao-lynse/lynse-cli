@@ -399,6 +399,131 @@ class LynseAPI:
         return self._request('GET', '/api/business/file/trans/get',
                             params={'fileId': safe_id})
 
+    # 文件分类查询
+    def list_files_by_category(self, folder_id: str = None, category: str = None,
+                               mode: str = None, is_read: int = None,
+                               transcribe_status: str = None) -> Dict[str, Any]:
+        """按分类列出文件"""
+        dto = {}
+        if folder_id is not None:
+            dto['folderId'] = self._sanitize_param(folder_id, 'safe')
+        if category is not None:
+            dto['category'] = self._sanitize_param(category, 'safe')
+        if mode is not None:
+            dto['mode'] = self._sanitize_param(mode, 'safe')
+        if is_read is not None:
+            dto['isRead'] = is_read
+        if transcribe_status is not None:
+            dto['transcribeStatus'] = self._sanitize_param(transcribe_status, 'safe')
+        return self._request('GET', '/api/business/file/category/list',
+                            params={'dto': json.dumps(dto) if dto else ''})
+
+    def list_files_by_category_v1(self, folder_id: str = None, category: str = None,
+                                  mode: str = None, is_read: int = None,
+                                  transcribe_status: str = None) -> Dict[str, Any]:
+        """按分类列出文件 (v1)"""
+        dto = {}
+        if folder_id is not None:
+            dto['folderId'] = self._sanitize_param(folder_id, 'safe')
+        if category is not None:
+            dto['category'] = self._sanitize_param(category, 'safe')
+        if mode is not None:
+            dto['mode'] = self._sanitize_param(mode, 'safe')
+        if is_read is not None:
+            dto['isRead'] = is_read
+        if transcribe_status is not None:
+            dto['transcribeStatus'] = self._sanitize_param(transcribe_status, 'safe')
+        return self._request('GET', '/api/business/file/category',
+                            params={'dto': json.dumps(dto) if dto else ''})
+
+    def page_files_by_category(self, folder_id: str = None, category: str = None,
+                               mode: str = None, is_read: int = None,
+                               transcribe_status: str = None,
+                               page_num: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        """分页按分类查看文件"""
+        query_req = {}
+        if folder_id is not None:
+            query_req['folderId'] = self._sanitize_param(folder_id, 'safe')
+        if category is not None:
+            query_req['category'] = self._sanitize_param(category, 'safe')
+        if mode is not None:
+            query_req['mode'] = self._sanitize_param(mode, 'safe')
+        if is_read is not None:
+            query_req['isRead'] = is_read
+        if transcribe_status is not None:
+            query_req['transcribeStatus'] = self._sanitize_param(transcribe_status, 'safe')
+        page_query = {'pageNum': page_num, 'pageSize': page_size}
+        return self._request('GET', '/api/business/file/category/page',
+                            params={
+                                'queryReq': json.dumps(query_req) if query_req else '',
+                                'pageQuery': json.dumps(page_query)
+                            })
+
+    def count_files_by_category(self) -> Dict[str, Any]:
+        """统计各分类文件数量"""
+        return self._request('GET', '/api/business/file/category/count')
+
+    # 文件移动
+    def change_folder(self, old_folder_id: str, new_folder_id: str,
+                      file_ids: List[str]) -> Dict[str, Any]:
+        """移动文件到另一个文件夹"""
+        safe_old = self._sanitize_param(old_folder_id, 'safe')
+        safe_new = self._sanitize_param(new_folder_id, 'safe')
+        safe_ids = [self._sanitize_param(fid, 'safe') for fid in file_ids]
+        return self._request('GET', '/api/business/file/changeFolder',
+                            params={
+                                'oldFolderId': safe_old,
+                                'newFolderId': safe_new,
+                                'fileIds': safe_ids
+                            })
+
+    # 文件夹管理
+    def list_folders(self, folder_name: str = None, color: str = None,
+                     nickname: str = None) -> Dict[str, Any]:
+        """列出所有文件夹"""
+        dto = {}
+        if folder_name is not None:
+            dto['folderName'] = self._sanitize_param(folder_name, 'safe')
+        if color is not None:
+            dto['color'] = self._sanitize_param(color, 'safe')
+        if nickname is not None:
+            dto['nickname'] = self._sanitize_param(nickname, 'safe')
+        return self._request('GET', '/api/business/file/folder/list',
+                            params={'dto': json.dumps(dto) if dto else ''})
+
+    def add_folder(self, folder_name: str, color: str = None,
+                   sort: int = None) -> Dict[str, Any]:
+        """创建文件夹"""
+        data = {'folderName': self._sanitize_param(folder_name, 'safe')}
+        if color is not None:
+            data['color'] = self._sanitize_param(color, 'safe')
+        if sort is not None:
+            data['sort'] = sort
+        return self._request('POST', '/api/business/file/folder/add', json_data=data)
+
+    def edit_folder(self, folder_id: str, folder_name: str = None,
+                    color: str = None, sort: int = None) -> Dict[str, Any]:
+        """编辑文件夹"""
+        safe_id = self._sanitize_param(folder_id, 'safe')
+        data = {'id': safe_id}
+        if folder_name is not None:
+            data['folderName'] = self._sanitize_param(folder_name, 'safe')
+        if color is not None:
+            data['color'] = self._sanitize_param(color, 'safe')
+        if sort is not None:
+            data['sort'] = sort
+        return self._request('PUT', f'/api/business/file/folder/{safe_id}', json_data=data)
+
+    def get_folder(self, folder_id: str) -> Dict[str, Any]:
+        """获取文件夹详情"""
+        safe_id = self._sanitize_param(folder_id, 'safe')
+        return self._request('GET', f'/api/business/file/folder/{safe_id}')
+
+    def batch_update_folder_sort(self, sort_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """批量更新文件夹排序"""
+        return self._request('PUT', '/api/business/file/folder/batch-update-sort',
+                            json_data={'folderSortList': sort_list})
+
     # AI 模型管理
     def get_ai_models(self) -> Dict[str, Any]:
         """获取 AI 模型列表"""
@@ -502,7 +627,7 @@ class LynseAPI:
 def main():
     """CLI 入口函数"""
     if len(sys.argv) < 2:
-        print("Lynse CLI v1.3.0 - 跨平台 Python 版")
+        print("Lynse CLI v1.3.1 - 跨平台 Python 版")
         print("用法：python lynse.py <command> [参数...]")
         print("\n常用命令:")
         print("  getCurrentCustomer          - 当前用户信息")
@@ -513,6 +638,15 @@ def main():
         print("  getConclusion <id>          - 文件总结")
         print("  getAiModels                 - AI 模型列表")
         print("  getDevicePage [页码]        - 设备列表")
+        print("\n文件分类与文件夹:")
+        print("  listFolders [名称]          - 文件夹列表")
+        print("  addFolder <名称> [颜色]     - 创建文件夹")
+        print("  getFolder <id>              - 文件夹详情")
+        print("  editFolder <id> '<JSON>'    - 编辑文件夹")
+        print("  listFilesByCategory [文件夹ID] [分类]")
+        print("  countByCategory             - 各分类文件数量统计")
+        print("  changeFolder <旧ID> <新ID> <文件ID列表>")
+        print("    将文件移动到另一个文件夹")
         sys.exit(1)
 
     command = sys.argv[1]
@@ -563,6 +697,53 @@ def main():
                 print("错误：getTranscriptionRecord 需要文件 ID 参数", file=sys.stderr)
                 sys.exit(1)
             result = api.get_transcription_record(args[0])
+        elif command == 'listFilesByCategory':
+            folder_id = args[0] if len(args) > 0 else None
+            category = args[1] if len(args) > 1 else None
+            result = api.list_files_by_category(folder_id=folder_id, category=category)
+        elif command == 'listFilesByCategoryV1':
+            folder_id = args[0] if len(args) > 0 else None
+            category = args[1] if len(args) > 1 else None
+            result = api.list_files_by_category_v1(folder_id=folder_id, category=category)
+        elif command == 'pageFilesByCategory':
+            folder_id = args[0] if len(args) > 0 else None
+            category = args[1] if len(args) > 1 else None
+            page_num = int(args[2]) if len(args) > 2 else 1
+            result = api.page_files_by_category(folder_id=folder_id, category=category, page_num=page_num)
+        elif command == 'countByCategory':
+            result = api.count_files_by_category()
+        elif command == 'changeFolder':
+            if len(args) < 3:
+                print("错误：changeFolder 需要 oldFolderId newFolderId fileId1[,fileId2,...] 参数", file=sys.stderr)
+                sys.exit(1)
+            file_ids = args[2].split(',')
+            result = api.change_folder(args[0], args[1], file_ids)
+        elif command == 'listFolders':
+            folder_name = args[0] if args else None
+            result = api.list_folders(folder_name=folder_name)
+        elif command == 'addFolder':
+            if len(args) < 1:
+                print("错误：addFolder 需要文件夹名称参数", file=sys.stderr)
+                sys.exit(1)
+            color = args[1] if len(args) > 1 else None
+            result = api.add_folder(args[0], color=color)
+        elif command == 'editFolder':
+            if len(args) < 2:
+                print("错误：editFolder 需要 folderId 和 JSON 参数", file=sys.stderr)
+                sys.exit(1)
+            edit_data = json.loads(args[1])
+            result = api.edit_folder(args[0], **edit_data)
+        elif command == 'getFolder':
+            if len(args) < 1:
+                print("错误：getFolder 需要文件夹 ID 参数", file=sys.stderr)
+                sys.exit(1)
+            result = api.get_folder(args[0])
+        elif command == 'batchUpdateFolderSort':
+            if len(args) < 1:
+                print("错误：batchUpdateFolderSort 需要 JSON 参数", file=sys.stderr)
+                sys.exit(1)
+            sort_data = json.loads(args[0])
+            result = api.batch_update_folder_sort(sort_data)
         elif command == 'getAiModels':
             result = api.get_ai_models()
         elif command == 'getDevicePage':
@@ -591,6 +772,8 @@ def main():
             print("\n支持的命令:")
             print("  getCurrentCustomer, getUserInfo, getUserPoints, getUserPhone,")
             print("  listFiles, getFileInfo, getConclusion, getOutline, exportOutline,")
+            print("  listFilesByCategory, countByCategory, pageFilesByCategory,")
+            print("  listFolders, addFolder, getFolder, editFolder, changeFolder,")
             print("  getAiModels, getDevicePage, getDeviceInfo, getCurrentUser,")
             print("  getRoleList, getMenuTree, login, logout")
             sys.exit(1)

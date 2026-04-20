@@ -132,6 +132,53 @@ class LynseUnifiedCLI:
                     print("错误：getTranscriptionRecord 需要文件 ID 参数", file=sys.stderr)
                     return 1
                 result = self.api.get_transcription_record(args[0])
+            elif command == 'listFilesByCategory':
+                folder_id = args[0] if len(args) > 0 else None
+                category = args[1] if len(args) > 1 else None
+                result = self.api.list_files_by_category(folder_id=folder_id, category=category)
+            elif command == 'listFilesByCategoryV1':
+                folder_id = args[0] if len(args) > 0 else None
+                category = args[1] if len(args) > 1 else None
+                result = self.api.list_files_by_category_v1(folder_id=folder_id, category=category)
+            elif command == 'pageFilesByCategory':
+                folder_id = args[0] if len(args) > 0 else None
+                category = args[1] if len(args) > 1 else None
+                page_num = int(args[2]) if len(args) > 2 else 1
+                result = self.api.page_files_by_category(folder_id=folder_id, category=category, page_num=page_num)
+            elif command == 'countByCategory':
+                result = self.api.count_files_by_category()
+            elif command == 'changeFolder':
+                if len(args) < 3:
+                    print("错误：changeFolder 需要 oldFolderId newFolderId fileId1[,fileId2,...] 参数", file=sys.stderr)
+                    return 1
+                file_ids = args[2].split(',')
+                result = self.api.change_folder(args[0], args[1], file_ids)
+            elif command == 'listFolders':
+                folder_name = args[0] if args else None
+                result = self.api.list_folders(folder_name=folder_name)
+            elif command == 'addFolder':
+                if len(args) < 1:
+                    print("错误：addFolder 需要文件夹名称参数", file=sys.stderr)
+                    return 1
+                color = args[1] if len(args) > 1 else None
+                result = self.api.add_folder(args[0], color=color)
+            elif command == 'editFolder':
+                if len(args) < 2:
+                    print("错误：editFolder 需要 folderId 和 JSON 参数", file=sys.stderr)
+                    return 1
+                edit_data = json.loads(args[1])
+                result = self.api.edit_folder(args[0], **edit_data)
+            elif command == 'getFolder':
+                if len(args) < 1:
+                    print("错误：getFolder 需要文件夹 ID 参数", file=sys.stderr)
+                    return 1
+                result = self.api.get_folder(args[0])
+            elif command == 'batchUpdateFolderSort':
+                if len(args) < 1:
+                    print("错误：batchUpdateFolderSort 需要 JSON 参数", file=sys.stderr)
+                    return 1
+                sort_data = json.loads(args[0])
+                result = self.api.batch_update_folder_sort(sort_data)
             elif command == 'getAiModels':
                 result = self.api.get_ai_models()
             elif command == 'addModel':
@@ -272,6 +319,8 @@ class LynseUnifiedCLI:
             'getCurrentCustomer', 'getUserInfo', 'getUserPoints', 'getUserPhone',
             'listFiles', 'getFileInfo', 'getConclusion', 'getConclusionList',
             'getOutline', 'exportOutline', 'listFilesByTimeRange', 'getTranscriptionRecord',
+            'listFilesByCategory', 'listFilesByCategoryV1', 'pageFilesByCategory', 'countByCategory',
+            'listFolders', 'addFolder', 'getFolder', 'editFolder', 'changeFolder', 'batchUpdateFolderSort',
             'getAiModels', 'addModel', 'deleteModel', 'editModel', 'enableModel',
             'getDevicePage', 'getDeviceInfo', 'unbindDevice',
             'getCurrentUser', 'addUser', 'editUser', 'removeUser',
