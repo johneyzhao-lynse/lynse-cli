@@ -187,11 +187,6 @@ class LynseUnifiedCLI:
                     return 1
                 model_data = json.loads(args[0])
                 result = self.api.add_model(model_data)
-            elif command == 'deleteModel':
-                if len(args) < 1:
-                    print("错误：deleteModel 需要模型 ID 参数", file=sys.stderr)
-                    return 1
-                result = self.api.delete_model(args[0])
             elif command == 'editModel':
                 if len(args) < 1:
                     print("错误：editModel 需要 JSON 数据参数", file=sys.stderr)
@@ -212,11 +207,6 @@ class LynseUnifiedCLI:
                     print("错误：getDeviceInfo 需要设备 ID 参数", file=sys.stderr)
                     return 1
                 result = self.api.get_device_info(args[0])
-            elif command == 'unbindDevice':
-                if len(args) < 1:
-                    print("错误：unbindDevice 需要设备 ID 参数", file=sys.stderr)
-                    return 1
-                result = self.api.unbind_device(args[0])
             elif command == 'getCurrentUser':
                 result = self.api.get_current_user()
             elif command == 'addUser':
@@ -231,11 +221,6 @@ class LynseUnifiedCLI:
                     return 1
                 user_data = json.loads(args[0])
                 result = self.api.edit_user(user_data)
-            elif command == 'removeUser':
-                if len(args) < 1:
-                    print("错误：removeUser 需要用户 ID 参数", file=sys.stderr)
-                    return 1
-                result = self.api.remove_user(args[0])
             elif command == 'login':
                 if len(args) < 2:
                     print("错误：login 需要用户名和密码参数", file=sys.stderr)
@@ -321,9 +306,9 @@ class LynseUnifiedCLI:
             'getOutline', 'exportOutline', 'listFilesByTimeRange', 'getTranscriptionRecord',
             'listFilesByCategory', 'listFilesByCategoryV1', 'pageFilesByCategory', 'countByCategory',
             'listFolders', 'addFolder', 'getFolder', 'editFolder', 'changeFolder', 'batchUpdateFolderSort',
-            'getAiModels', 'addModel', 'deleteModel', 'editModel', 'enableModel',
-            'getDevicePage', 'getDeviceInfo', 'unbindDevice',
-            'getCurrentUser', 'addUser', 'editUser', 'removeUser',
+            'getAiModels', 'addModel', 'editModel', 'enableModel',
+            'getDevicePage', 'getDeviceInfo',
+            'getCurrentUser', 'addUser', 'editUser',
             'login', 'loginWithPhone', 'logout', 'sendSms', 'sendEmail',
             'getRoleList', 'getMenuTree'
         }

@@ -533,12 +533,6 @@ class LynseAPI:
         """添加 AI 模型"""
         return self._request('POST', '/api/business/ai/addModel', json_data=model_data)
 
-    def delete_model(self, model_id: str) -> Dict[str, Any]:
-        """删除 AI 模型"""
-        safe_id = self._sanitize_param(model_id, 'safe')
-        return self._request('DELETE', '/api/business/ai/deleteModel',
-                            headers={'id': safe_id})
-
     def edit_model(self, model_data: Dict[str, Any]) -> Dict[str, Any]:
         """编辑 AI 模型"""
         return self._request('POST', '/api/business/ai/editModel', json_data=model_data)
@@ -563,12 +557,6 @@ class LynseAPI:
         return self._request('GET', '/api/business/deviceMgt/info5',
                             headers={'id': safe_id})
 
-    def unbind_device(self, device_id: str) -> Dict[str, Any]:
-        """解绑设备"""
-        safe_id = self._sanitize_param(device_id, 'safe')
-        return self._request('POST', '/api/business/deviceMgt/unbind',
-                            headers={'id': safe_id})
-
     # 用户管理
     def get_current_user(self) -> Dict[str, Any]:
         """获取当前系统用户"""
@@ -581,12 +569,6 @@ class LynseAPI:
     def edit_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
         """编辑用户"""
         return self._request('POST', '/api/business/sysUser/edit1', json_data=user_data)
-
-    def remove_user(self, user_id: str) -> Dict[str, Any]:
-        """删除用户"""
-        safe_id = self._sanitize_param(user_id, 'safe')
-        return self._request('POST', '/api/business/sysUser/remove',
-                            headers={'id': safe_id})
 
     # 登录相关
     def login(self, username: str, password: str) -> Dict[str, Any]:
