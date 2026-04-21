@@ -200,8 +200,15 @@ class LynseAPI:
                     }
                     test_response = requests.get(test_url, headers=test_headers, timeout=10)
                     if test_response.status_code == 200:
-                        self._access_token = cached
-                        return cached
+                        # HTTP 200 不代表 Token 有效，还需检查业务状态码
+                        try:
+                            test_data = test_response.json()
+                            if test_data.get('code') == 200:
+                                self._access_token = cached
+                                return cached
+                        except (json.JSONDecodeError, AttributeError):
+                            pass  # 响应格式异常，视为无效
+                    # Token 无效（HTTP 非 200 或业务码非 200），继续刷新
                 except Exception:
                     pass  # Token 无效，刷新
 
@@ -310,7 +317,7 @@ class LynseAPI:
             # 检查业务错误码
             code = data.get('code')
             if code and code != 200:
-                message = data.get('message', '未知错误')
+                message = data.get('msg') or data.get('message', '未知错误')
                 raise LynseAPIError(f"API 错误：{message}", code=code)
 
             return data
