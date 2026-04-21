@@ -4,35 +4,31 @@ All URIs are relative to **
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**addEvaluation**](FileControllerApi.md#addEvaluation) | **POST** /api/business/file/evaluation/add | 
-[**changeFolder**](FileControllerApi.md#changeFolder) | **GET** /api/business/file/changeFolder | 
-[**cleanBin**](FileControllerApi.md#cleanBin) | **POST** /api/business/file/cleanBin | 
-[**cleanBinAll**](FileControllerApi.md#cleanBinAll) | **POST** /api/business/file/cleanBinAll | 
-[**countByCategory**](FileControllerApi.md#countByCategory) | **GET** /api/business/file/category/count | 
-[**delete**](FileControllerApi.md#delete) | **DELETE** /api/business/file/delete | 
-[**edit**](FileControllerApi.md#edit) | **PUT** /api/business/file/{fileId} | 
-[**getAvailableAIModelList**](FileControllerApi.md#getAvailableAIModelList) | **GET** /api/business/file/getAvailableAIModelList | 
-[**getEvaluationList**](FileControllerApi.md#getEvaluationList) | **GET** /api/business/file/getEvaluationList | 
-[**getStsToken**](FileControllerApi.md#getStsToken) | **POST** /api/business/file/getStsToken | 
-[**getSupportLanguage**](FileControllerApi.md#getSupportLanguage) | **GET** /api/business/file/getSupportLanguage | 
-[**handleAudioMergeCallback**](FileControllerApi.md#handleAudioMergeCallback) | **POST** /api/business/file/audio/merge/callback | 
-[**info1**](FileControllerApi.md#info1) | **GET** /api/business/file/info | 
-[**list**](FileControllerApi.md#list) | **GET** /api/business/file/list | 
-[**listByCategory**](FileControllerApi.md#listByCategory) | **GET** /api/business/file/category/list | 
-[**listByCategoryV1**](FileControllerApi.md#listByCategoryV1) | **GET** /api/business/file/category | 
-[**listByTimeRange**](FileControllerApi.md#listByTimeRange) | **GET** /api/business/file/timeRange/list | 
-[**markFileAsRead**](FileControllerApi.md#markFileAsRead) | **GET** /api/business/file/markRead | 
-[**notify**](FileControllerApi.md#notify) | **GET** /api/business/file/upload/notify | 
-[**page**](FileControllerApi.md#page) | **GET** /api/business/file/page | 
-[**pageByCategory**](FileControllerApi.md#pageByCategory) | **GET** /api/business/file/category/page | 
-[**presign4Download**](FileControllerApi.md#presign4Download) | **GET** /api/business/file/presign/download | 
-[**presign4Upload**](FileControllerApi.md#presign4Upload) | **POST** /api/business/file/presign/upload | 
-[**presign4UploadForPublic**](FileControllerApi.md#presign4UploadForPublic) | **POST** /api/business/file/presign/uploadPublic | 
-[**queryAudioMergeStatus**](FileControllerApi.md#queryAudioMergeStatus) | **GET** /api/business/file/audio/merge/status | 
-[**recover**](FileControllerApi.md#recover) | **POST** /api/business/file/recover | 
-[**removeOss**](FileControllerApi.md#removeOss) | **DELETE** /api/business/file/removeOss | 
-[**submitAudioMerge**](FileControllerApi.md#submitAudioMerge) | **POST** /api/business/file/audio/merge | 
-[**testAudioMerge**](FileControllerApi.md#testAudioMerge) | **POST** /api/business/file/audio/merge/test | 
+[**addEvaluation**](FileControllerApi.md#addEvaluation) | **POST** /api/business/file/evaluation/add |
+[**changeFolder**](FileControllerApi.md#changeFolder) | **GET** /api/business/file/changeFolder |
+[**countByCategory**](FileControllerApi.md#countByCategory) | **GET** /api/business/file/category/count |
+[**edit**](FileControllerApi.md#edit) | **PUT** /api/business/file/{fileId} |
+[**getAvailableAIModelList**](FileControllerApi.md#getAvailableAIModelList) | **GET** /api/business/file/getAvailableAIModelList |
+[**getEvaluationList**](FileControllerApi.md#getEvaluationList) | **GET** /api/business/file/getEvaluationList |
+[**getStsToken**](FileControllerApi.md#getStsToken) | **POST** /api/business/file/getStsToken |
+[**getSupportLanguage**](FileControllerApi.md#getSupportLanguage) | **GET** /api/business/file/getSupportLanguage |
+[**handleAudioMergeCallback**](FileControllerApi.md#handleAudioMergeCallback) | **POST** /api/business/file/audio/merge/callback |
+[**info1**](FileControllerApi.md#info1) | **GET** /api/business/file/info |
+[**list**](FileControllerApi.md#list) | **GET** /api/business/file/list |
+[**listByCategory**](FileControllerApi.md#listByCategory) | **GET** /api/business/file/category/list |
+[**listByCategoryV1**](FileControllerApi.md#listByCategoryV1) | **GET** /api/business/file/category |
+[**listByTimeRange**](FileControllerApi.md#listByTimeRange) | **GET** /api/business/file/timeRange/list |
+[**markFileAsRead**](FileControllerApi.md#markFileAsRead) | **GET** /api/business/file/markRead |
+[**notify**](FileControllerApi.md#notify) | **GET** /api/business/file/upload/notify |
+[**page**](FileControllerApi.md#page) | **GET** /api/business/file/page |
+[**pageByCategory**](FileControllerApi.md#pageByCategory) | **GET** /api/business/file/category/page |
+[**presign4Download**](FileControllerApi.md#presign4Download) | **GET** /api/business/file/presign/download |
+[**presign4Upload**](FileControllerApi.md#presign4Upload) | **POST** /api/business/file/presign/upload |
+[**presign4UploadForPublic**](FileControllerApi.md#presign4UploadForPublic) | **POST** /api/business/file/presign/uploadPublic |
+[**queryAudioMergeStatus**](FileControllerApi.md#queryAudioMergeStatus) | **GET** /api/business/file/audio/merge/status |
+[**recover**](FileControllerApi.md#recover) | **POST** /api/business/file/recover |
+[**submitAudioMerge**](FileControllerApi.md#submitAudioMerge) | **POST** /api/business/file/audio/merge |
+[**testAudioMerge**](FileControllerApi.md#testAudioMerge) | **POST** /api/business/file/audio/merge/test |
 
 
 
@@ -104,69 +100,6 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 
-## cleanBin
-
-
-
-### Example
-
-```bash
- cleanBin
-```
-
-### Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **fileIdsReq** | [**FileIdsReq**](FileIdsReq.md) |  |
-
-### Return type
-
-[**ResultBoolean**](ResultBoolean.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: application/json
-- **Accept**: */*
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-
-## cleanBinAll
-
-
-
-### Example
-
-```bash
- cleanBinAll
-```
-
-### Parameters
-
-This endpoint does not need any parameter.
-
-### Return type
-
-[**ResultBoolean**](ResultBoolean.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not Applicable
-- **Accept**: */*
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-
 ## countByCategory
 
 
@@ -184,40 +117,6 @@ This endpoint does not need any parameter.
 ### Return type
 
 [**ResultFileCategoryVO**](ResultFileCategoryVO.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not Applicable
-- **Accept**: */*
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-
-## delete
-
-
-
-### Example
-
-```bash
- delete  Specify as:  fileIds=value1 fileIds=value2 fileIds=...  Specify as:  folderIds=value1 folderIds=value2 folderIds=...
-```
-
-### Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **fileIds** | [**array[string]**](string.md) |  | [default to null]
- **folderIds** | [**array[string]**](string.md) |  | [default to null]
-
-### Return type
-
-[**ResultBoolean**](ResultBoolean.md)
 
 ### Authorization
 
@@ -883,36 +782,6 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: application/json
-- **Accept**: */*
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-
-## removeOss
-
-
-
-### Example
-
-```bash
- removeOss
-```
-
-### Parameters
-
-This endpoint does not need any parameter.
-
-### Return type
-
-[**ResultBoolean**](ResultBoolean.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not Applicable
 - **Accept**: */*
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
