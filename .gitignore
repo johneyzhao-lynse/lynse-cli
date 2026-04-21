@@ -5,3 +5,4 @@ __pycache__/
 autoresearch-lynse-cli/
 .DS_Store
 .npmrc
+lynse-cli-b/docs/
