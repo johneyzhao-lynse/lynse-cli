@@ -31,8 +31,12 @@ docs/BonusVO.md
 docs/BusinessPoolControllerApi.md
 docs/ConclusionContentDto.md
 docs/CustomerControllerApi.md
+docs/CustomerDurationPackageGrantReq.md
 docs/CustomerExtInfoVO.md
 docs/CustomerInfoVO.md
+docs/CustomerMembershipQuotaVO.md
+docs/CustomerMembershipRechargeReq.md
+docs/CustomerMembershipSyncReq.md
 docs/CustomerQueryReq.md
 docs/CustomerRechargeReq.md
 docs/CustomerRegisterReq.md
@@ -51,11 +55,9 @@ docs/FileCategoryVO.md
 docs/FileConclusionUpdateReq.md
 docs/FileConclusionVO.md
 docs/FileControllerApi.md
-docs/FileEntity.md
 docs/FileIdsReq.md
 docs/FileInfoDTO.md
 docs/FileInfoVO.md
-docs/FileInfoVOHashInfo.md
 docs/FileListQueryReq.md
 docs/FileMindMapUpdateReq.md
 docs/FileMindMapVO.md
@@ -65,6 +67,10 @@ docs/FileOutlineVO.md
 docs/FileQueryReq.md
 docs/FileShareInfoVO.md
 docs/FileTimeRangeQueryReq.md
+docs/FileTodoBatchUpdateReq.md
+docs/FileTodoCountVO.md
+docs/FileTodoDetailVO.md
+docs/FileTodoIdsReq.md
 docs/FileTransRecordUpdateReq.md
 docs/FileTransRecordVO.md
 docs/FileUpdateReq.md
@@ -97,6 +103,9 @@ docs/PromptTemplateItemVO.md
 docs/PromptTemplateSelectVO.md
 docs/PushControllerApi.md
 docs/PushInitReq.md
+docs/RedemptionCodeRedeemReq.md
+docs/RedemptionControllerApi.md
+docs/RedemptionRedeemResultVO.md
 docs/ResultAiTaskResultVO.md
 docs/ResultAiTranscribeVocabularyEnabledVO.md
 docs/ResultAliyunAudioMergeTaskVO.md
@@ -107,12 +116,14 @@ docs/ResultBonusVO.md
 docs/ResultBoolean.md
 docs/ResultCustomerExtInfoVO.md
 docs/ResultCustomerInfoVO.md
+docs/ResultCustomerMembershipQuotaVO.md
 docs/ResultFileCategoryVO.md
 docs/ResultFileConclusionVO.md
-docs/ResultFileEntity.md
+docs/ResultFileInfoVO.md
 docs/ResultFileMindMapVO.md
 docs/ResultFileOutlineVO.md
 docs/ResultFileShareInfoVO.md
+docs/ResultFileTodoCountVO.md
 docs/ResultFolderEntity.md
 docs/ResultGeneratePresignedUrlResult.md
 docs/ResultGenerateShareLinkVO.md
@@ -147,6 +158,7 @@ docs/ResultMapStringListFileConclusionVO.md
 docs/ResultMapStringTranscribeStatus.md
 docs/ResultOtaManagementVO.md
 docs/ResultPreSignedUrlVO.md
+docs/ResultRedemptionRedeemResultVO.md
 docs/ResultString.md
 docs/ResultStsTokenVO.md
 docs/ResultSubmitTransResultVO.md
@@ -157,7 +169,9 @@ docs/SpeakerInfo.md
 docs/SpeakerNameUpdateReq.md
 docs/StsTokenVO.md
 docs/SubmitTransResultVO.md
+docs/SyncPreUploadReq.md
 docs/TableDataInfoFileInfoVO.md
+docs/TableDataInfoFileTodoDetailVO.md
 docs/TableDataInfoPointsLog.md
 docs/TeamAddOrEditReq.md
 docs/TeamControllerApi.md
@@ -170,6 +184,7 @@ docs/TeamInviteControllerApi.md
 docs/TeamMemberInfoVO.md
 docs/TeamMemberInviteVO.md
 docs/TeamRechargeReq.md
+docs/TodoUpdateItem.md
 docs/TranscriptionLanguageVO.md
 docs/TranscriptionStatus.md
 docs/TransferFileReq.md

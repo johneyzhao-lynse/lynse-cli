@@ -18,11 +18,11 @@ import json
 from pathlib import Path
 
 # 导入核心 API 模块
-from lynse import LynseAPI, LynseAPIError
+from lynse import LynseAPI, LynseAPIError, VERSION
 
 
 class LynseUnifiedCLI:
-    """Lynse 统一 CLI - 路由到合适的处理逻辑"""
+    """Lynse/灵光记统一 CLI - 路由到合适的处理逻辑"""
 
     def __init__(self):
         self.script_dir = Path(__file__).parent.resolve()
@@ -104,6 +104,19 @@ class LynseUnifiedCLI:
                 return 0
             elif command == 'listFiles':
                 result = self.api.list_files()
+            elif command == 'listTodos':
+                page_size = int(args[0]) if args else 100
+                status = args[1].lower() if len(args) > 1 else 'all'
+                result = self.api.list_todos(
+                    page_size=page_size,
+                    is_completed=self.api._todo_status_filter(status),
+                )
+            elif command == 'countTodos':
+                result = self.api.count_todos()
+            elif command == 'organizeTodos':
+                status = args[0].lower() if args else 'all'
+                page_size = int(args[1]) if len(args) > 1 else 100
+                result = self.api.organize_todos(status=status, page_size=page_size)
             elif command == 'getFileInfo':
                 if len(args) < 1:
                     print("错误：getFileInfo 需要文件 ID 参数", file=sys.stderr)
@@ -247,12 +260,15 @@ class LynseUnifiedCLI:
         """
         if len(args) < 1:
             version = self._check_cli_version()
-            print(f"Lynse Unified CLI (v{version})")
-            print("用法：python lynse_cli.py <command> [参数...]")
+            print(f"Lynse/灵光记 Unified CLI v{VERSION} (client={version})")
+            print("用法：python / python3 / py -3 lynse_cli.py <command> [参数...]")
             print("\n常用命令:")
             print("  getCurrentCustomer          - 当前用户信息")
             print("  getUserPoints               - 当前用户积分")
             print("  listFiles                   - 文件列表")
+            print("  listTodos [pageSize] [all|open|done] - 文件待办列表")
+            print("  countTodos                  - 按截止时间统计待办")
+            print("  organizeTodos [all|open|done] - 按截止时间整理待办")
             print("  getAiModels                 - AI 模型列表")
             print("  getDevicePage [页码]        - 设备列表")
             return 1
@@ -270,7 +286,8 @@ class LynseUnifiedCLI:
         # 优先使用 Python API 处理业务命令（跨平台）
         python_commands = {
             'getCurrentCustomer', 'getUserInfo', 'getUserPoints', 'getUserPhone',
-            'listFiles', 'getFileInfo', 'getConclusion', 'getConclusionList',
+            'listFiles', 'listTodos', 'countTodos', 'organizeTodos',
+            'getFileInfo', 'getConclusion', 'getConclusionList',
             'getOutline', 'exportOutline', 'listFilesByTimeRange', 'getTranscriptionRecord',
             'getAiModels', 'addModel', 'deleteModel', 'editModel', 'enableModel',
             'getDevicePage', 'getDeviceInfo', 'unbindDevice',

@@ -8,7 +8,7 @@
 # ! openapi-generator (https://openapi-generator.tech)
 # ! FROM OPENAPI SPECIFICATION IN JSON.
 # !
-# ! Generator version: 7.21.0
+# ! Generator version: 7.22.0
 # !
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -105,10 +105,13 @@ operation_parameters_minimum_occurrences["detail:::queryReq"]=1
 operation_parameters_minimum_occurrences["edit2:::CustomerUpdateReq"]=1
 operation_parameters_minimum_occurrences["edit3:::customerId"]=1
 operation_parameters_minimum_occurrences["edit3:::CustomerUpdateReq"]=1
+operation_parameters_minimum_occurrences["grantDurationPackage:::CustomerDurationPackageGrantReq"]=1
 operation_parameters_minimum_occurrences["list2:::queryReq"]=1
 operation_parameters_minimum_occurrences["outPutLanguage:::language"]=1
 operation_parameters_minimum_occurrences["recharge1:::CustomerRechargeReq"]=1
+operation_parameters_minimum_occurrences["rechargeMembership:::CustomerMembershipRechargeReq"]=1
 operation_parameters_minimum_occurrences["register:::CustomerRegisterReq"]=1
+operation_parameters_minimum_occurrences["syncMembership:::CustomerMembershipSyncReq"]=1
 operation_parameters_minimum_occurrences["terminate:::customerId"]=1
 operation_parameters_minimum_occurrences["updatePwd:::CustomerUpdateReq"]=1
 operation_parameters_minimum_occurrences["bind:::DeviceBindVO"]=1
@@ -121,12 +124,14 @@ operation_parameters_minimum_occurrences["changeFolder:::oldFolderId"]=1
 operation_parameters_minimum_occurrences["changeFolder:::newFolderId"]=1
 operation_parameters_minimum_occurrences["changeFolder:::fileIds"]=1
 operation_parameters_minimum_occurrences["cleanBin:::FileIdsReq"]=1
+operation_parameters_minimum_occurrences["createSyncUploadPlaceholder:::SyncPreUploadReq"]=1
 operation_parameters_minimum_occurrences["delete:::fileIds"]=1
 operation_parameters_minimum_occurrences["delete:::folderIds"]=1
 operation_parameters_minimum_occurrences["edit:::fileId"]=1
 operation_parameters_minimum_occurrences["edit:::FileUpdateReq"]=1
 operation_parameters_minimum_occurrences["getEvaluationList:::optionType"]=0
 operation_parameters_minimum_occurrences["getStsToken:::PreUploadReq"]=1
+operation_parameters_minimum_occurrences["getSyncStsToken:::SyncPreUploadReq"]=1
 operation_parameters_minimum_occurrences["handleAudioMergeCallback:::body"]=1
 operation_parameters_minimum_occurrences["info1:::queryReq"]=1
 operation_parameters_minimum_occurrences["list:::dto"]=1
@@ -135,6 +140,7 @@ operation_parameters_minimum_occurrences["listByCategoryV1:::dto"]=1
 operation_parameters_minimum_occurrences["listByTimeRange:::queryReq"]=1
 operation_parameters_minimum_occurrences["markFileAsRead:::fileId"]=1
 operation_parameters_minimum_occurrences["notify:::fileId"]=1
+operation_parameters_minimum_occurrences["notifySyncUpload:::fileId"]=1
 operation_parameters_minimum_occurrences["page:::dto"]=1
 operation_parameters_minimum_occurrences["page:::pageQuery"]=1
 operation_parameters_minimum_occurrences["pageByCategory:::queryReq"]=1
@@ -149,6 +155,7 @@ operation_parameters_minimum_occurrences["testAudioMerge:::AliyunAudioMergeReq"]
 operation_parameters_minimum_occurrences["aiModelProcessText:::AiTaskAddReq"]=1
 operation_parameters_minimum_occurrences["batchGetConclusions:::BatchConclusionRequestDTO"]=1
 operation_parameters_minimum_occurrences["deleteConclusion:::conclusionId"]=1
+operation_parameters_minimum_occurrences["deleteTodo:::FileTodoIdsReq"]=1
 operation_parameters_minimum_occurrences["editConclusion:::conclusionId"]=1
 operation_parameters_minimum_occurrences["editConclusion:::FileConclusionUpdateReq"]=1
 operation_parameters_minimum_occurrences["editMindMap:::mindMapId"]=1
@@ -178,11 +185,14 @@ operation_parameters_minimum_occurrences["getOutline:::teamId"]=0
 operation_parameters_minimum_occurrences["getOutline:::taskId"]=0
 operation_parameters_minimum_occurrences["getTranscribeStatus:::TranscriptionStatus"]=1
 operation_parameters_minimum_occurrences["handleTransCallback:::body"]=1
+operation_parameters_minimum_occurrences["listTodoByDeadlineRange:::body"]=1
 operation_parameters_minimum_occurrences["listTranscriptionRecord:::taskId"]=1
 operation_parameters_minimum_occurrences["listTranscriptionRecord:::teamId"]=1
 operation_parameters_minimum_occurrences["listTranscriptionRecord:::fileId"]=0
+operation_parameters_minimum_occurrences["recoverTodo:::FileTodoIdsReq"]=1
 operation_parameters_minimum_occurrences["transferFile:::TransferFileReq"]=1
 operation_parameters_minimum_occurrences["updateFeedback:::FeedbackRequest"]=1
+operation_parameters_minimum_occurrences["updateTodo:::FileTodoBatchUpdateReq"]=1
 operation_parameters_minimum_occurrences["add:::FolderAddOrEditReq"]=1
 operation_parameters_minimum_occurrences["batchUpdateSort:::FolderSortUpdateReq"]=1
 operation_parameters_minimum_occurrences["edit1:::folderId"]=1
@@ -198,6 +208,7 @@ operation_parameters_minimum_occurrences["queryPointsLog:::pointsLogQueryReq"]=1
 operation_parameters_minimum_occurrences["init:::PushInitReq"]=1
 operation_parameters_minimum_occurrences["testAndroidPush:::UmengAndroidPushReq"]=1
 operation_parameters_minimum_occurrences["testIosPush:::UmengIosPushReq"]=1
+operation_parameters_minimum_occurrences["redeem:::RedemptionCodeRedeemReq"]=1
 operation_parameters_minimum_occurrences["generateShareLink:::GenerateShareReq"]=1
 operation_parameters_minimum_occurrences["getSharedInfo:::shareId"]=1
 operation_parameters_minimum_occurrences["allocatePointsToTeam:::pointsAmount"]=1
@@ -250,10 +261,13 @@ operation_parameters_maximum_occurrences["detail:::queryReq"]=0
 operation_parameters_maximum_occurrences["edit2:::CustomerUpdateReq"]=0
 operation_parameters_maximum_occurrences["edit3:::customerId"]=0
 operation_parameters_maximum_occurrences["edit3:::CustomerUpdateReq"]=0
+operation_parameters_maximum_occurrences["grantDurationPackage:::CustomerDurationPackageGrantReq"]=0
 operation_parameters_maximum_occurrences["list2:::queryReq"]=0
 operation_parameters_maximum_occurrences["outPutLanguage:::language"]=0
 operation_parameters_maximum_occurrences["recharge1:::CustomerRechargeReq"]=0
+operation_parameters_maximum_occurrences["rechargeMembership:::CustomerMembershipRechargeReq"]=0
 operation_parameters_maximum_occurrences["register:::CustomerRegisterReq"]=0
+operation_parameters_maximum_occurrences["syncMembership:::CustomerMembershipSyncReq"]=0
 operation_parameters_maximum_occurrences["terminate:::customerId"]=0
 operation_parameters_maximum_occurrences["updatePwd:::CustomerUpdateReq"]=0
 operation_parameters_maximum_occurrences["bind:::DeviceBindVO"]=0
@@ -266,12 +280,14 @@ operation_parameters_maximum_occurrences["changeFolder:::oldFolderId"]=0
 operation_parameters_maximum_occurrences["changeFolder:::newFolderId"]=0
 operation_parameters_maximum_occurrences["changeFolder:::fileIds"]=0
 operation_parameters_maximum_occurrences["cleanBin:::FileIdsReq"]=0
+operation_parameters_maximum_occurrences["createSyncUploadPlaceholder:::SyncPreUploadReq"]=0
 operation_parameters_maximum_occurrences["delete:::fileIds"]=0
 operation_parameters_maximum_occurrences["delete:::folderIds"]=0
 operation_parameters_maximum_occurrences["edit:::fileId"]=0
 operation_parameters_maximum_occurrences["edit:::FileUpdateReq"]=0
 operation_parameters_maximum_occurrences["getEvaluationList:::optionType"]=0
 operation_parameters_maximum_occurrences["getStsToken:::PreUploadReq"]=0
+operation_parameters_maximum_occurrences["getSyncStsToken:::SyncPreUploadReq"]=0
 operation_parameters_maximum_occurrences["handleAudioMergeCallback:::body"]=0
 operation_parameters_maximum_occurrences["info1:::queryReq"]=0
 operation_parameters_maximum_occurrences["list:::dto"]=0
@@ -280,6 +296,7 @@ operation_parameters_maximum_occurrences["listByCategoryV1:::dto"]=0
 operation_parameters_maximum_occurrences["listByTimeRange:::queryReq"]=0
 operation_parameters_maximum_occurrences["markFileAsRead:::fileId"]=0
 operation_parameters_maximum_occurrences["notify:::fileId"]=0
+operation_parameters_maximum_occurrences["notifySyncUpload:::fileId"]=0
 operation_parameters_maximum_occurrences["page:::dto"]=0
 operation_parameters_maximum_occurrences["page:::pageQuery"]=0
 operation_parameters_maximum_occurrences["pageByCategory:::queryReq"]=0
@@ -294,6 +311,7 @@ operation_parameters_maximum_occurrences["testAudioMerge:::AliyunAudioMergeReq"]
 operation_parameters_maximum_occurrences["aiModelProcessText:::AiTaskAddReq"]=0
 operation_parameters_maximum_occurrences["batchGetConclusions:::BatchConclusionRequestDTO"]=0
 operation_parameters_maximum_occurrences["deleteConclusion:::conclusionId"]=0
+operation_parameters_maximum_occurrences["deleteTodo:::FileTodoIdsReq"]=0
 operation_parameters_maximum_occurrences["editConclusion:::conclusionId"]=0
 operation_parameters_maximum_occurrences["editConclusion:::FileConclusionUpdateReq"]=0
 operation_parameters_maximum_occurrences["editMindMap:::mindMapId"]=0
@@ -323,11 +341,14 @@ operation_parameters_maximum_occurrences["getOutline:::teamId"]=0
 operation_parameters_maximum_occurrences["getOutline:::taskId"]=0
 operation_parameters_maximum_occurrences["getTranscribeStatus:::TranscriptionStatus"]=0
 operation_parameters_maximum_occurrences["handleTransCallback:::body"]=0
+operation_parameters_maximum_occurrences["listTodoByDeadlineRange:::body"]=0
 operation_parameters_maximum_occurrences["listTranscriptionRecord:::taskId"]=0
 operation_parameters_maximum_occurrences["listTranscriptionRecord:::teamId"]=0
 operation_parameters_maximum_occurrences["listTranscriptionRecord:::fileId"]=0
+operation_parameters_maximum_occurrences["recoverTodo:::FileTodoIdsReq"]=0
 operation_parameters_maximum_occurrences["transferFile:::TransferFileReq"]=0
 operation_parameters_maximum_occurrences["updateFeedback:::FeedbackRequest"]=0
+operation_parameters_maximum_occurrences["updateTodo:::FileTodoBatchUpdateReq"]=0
 operation_parameters_maximum_occurrences["add:::FolderAddOrEditReq"]=0
 operation_parameters_maximum_occurrences["batchUpdateSort:::FolderSortUpdateReq"]=0
 operation_parameters_maximum_occurrences["edit1:::folderId"]=0
@@ -343,6 +364,7 @@ operation_parameters_maximum_occurrences["queryPointsLog:::pointsLogQueryReq"]=0
 operation_parameters_maximum_occurrences["init:::PushInitReq"]=0
 operation_parameters_maximum_occurrences["testAndroidPush:::UmengAndroidPushReq"]=0
 operation_parameters_maximum_occurrences["testIosPush:::UmengIosPushReq"]=0
+operation_parameters_maximum_occurrences["redeem:::RedemptionCodeRedeemReq"]=0
 operation_parameters_maximum_occurrences["generateShareLink:::GenerateShareReq"]=0
 operation_parameters_maximum_occurrences["getSharedInfo:::shareId"]=0
 operation_parameters_maximum_occurrences["allocatePointsToTeam:::pointsAmount"]=0
@@ -392,10 +414,13 @@ operation_parameters_collection_type["detail:::queryReq"]=""
 operation_parameters_collection_type["edit2:::CustomerUpdateReq"]=""
 operation_parameters_collection_type["edit3:::customerId"]=""
 operation_parameters_collection_type["edit3:::CustomerUpdateReq"]=""
+operation_parameters_collection_type["grantDurationPackage:::CustomerDurationPackageGrantReq"]=""
 operation_parameters_collection_type["list2:::queryReq"]=""
 operation_parameters_collection_type["outPutLanguage:::language"]=""
 operation_parameters_collection_type["recharge1:::CustomerRechargeReq"]=""
+operation_parameters_collection_type["rechargeMembership:::CustomerMembershipRechargeReq"]=""
 operation_parameters_collection_type["register:::CustomerRegisterReq"]=""
+operation_parameters_collection_type["syncMembership:::CustomerMembershipSyncReq"]=""
 operation_parameters_collection_type["terminate:::customerId"]=""
 operation_parameters_collection_type["updatePwd:::CustomerUpdateReq"]=""
 operation_parameters_collection_type["bind:::DeviceBindVO"]=""
@@ -408,12 +433,14 @@ operation_parameters_collection_type["changeFolder:::oldFolderId"]=""
 operation_parameters_collection_type["changeFolder:::newFolderId"]=""
 operation_parameters_collection_type["changeFolder:::fileIds"]="multi"
 operation_parameters_collection_type["cleanBin:::FileIdsReq"]=""
+operation_parameters_collection_type["createSyncUploadPlaceholder:::SyncPreUploadReq"]=""
 operation_parameters_collection_type["delete:::fileIds"]="multi"
 operation_parameters_collection_type["delete:::folderIds"]="multi"
 operation_parameters_collection_type["edit:::fileId"]=""
 operation_parameters_collection_type["edit:::FileUpdateReq"]=""
 operation_parameters_collection_type["getEvaluationList:::optionType"]=""
 operation_parameters_collection_type["getStsToken:::PreUploadReq"]=""
+operation_parameters_collection_type["getSyncStsToken:::SyncPreUploadReq"]=""
 operation_parameters_collection_type["handleAudioMergeCallback:::body"]=""
 operation_parameters_collection_type["info1:::queryReq"]=""
 operation_parameters_collection_type["list:::dto"]=""
@@ -422,6 +449,7 @@ operation_parameters_collection_type["listByCategoryV1:::dto"]=""
 operation_parameters_collection_type["listByTimeRange:::queryReq"]=""
 operation_parameters_collection_type["markFileAsRead:::fileId"]=""
 operation_parameters_collection_type["notify:::fileId"]=""
+operation_parameters_collection_type["notifySyncUpload:::fileId"]=""
 operation_parameters_collection_type["page:::dto"]=""
 operation_parameters_collection_type["page:::pageQuery"]=""
 operation_parameters_collection_type["pageByCategory:::queryReq"]=""
@@ -436,6 +464,7 @@ operation_parameters_collection_type["testAudioMerge:::AliyunAudioMergeReq"]=""
 operation_parameters_collection_type["aiModelProcessText:::AiTaskAddReq"]=""
 operation_parameters_collection_type["batchGetConclusions:::BatchConclusionRequestDTO"]=""
 operation_parameters_collection_type["deleteConclusion:::conclusionId"]=""
+operation_parameters_collection_type["deleteTodo:::FileTodoIdsReq"]=""
 operation_parameters_collection_type["editConclusion:::conclusionId"]=""
 operation_parameters_collection_type["editConclusion:::FileConclusionUpdateReq"]=""
 operation_parameters_collection_type["editMindMap:::mindMapId"]=""
@@ -465,11 +494,14 @@ operation_parameters_collection_type["getOutline:::teamId"]=""
 operation_parameters_collection_type["getOutline:::taskId"]=""
 operation_parameters_collection_type["getTranscribeStatus:::TranscriptionStatus"]=""
 operation_parameters_collection_type["handleTransCallback:::body"]=""
+operation_parameters_collection_type["listTodoByDeadlineRange:::body"]=""
 operation_parameters_collection_type["listTranscriptionRecord:::taskId"]=""
 operation_parameters_collection_type["listTranscriptionRecord:::teamId"]=""
 operation_parameters_collection_type["listTranscriptionRecord:::fileId"]=""
+operation_parameters_collection_type["recoverTodo:::FileTodoIdsReq"]=""
 operation_parameters_collection_type["transferFile:::TransferFileReq"]=""
 operation_parameters_collection_type["updateFeedback:::FeedbackRequest"]=""
+operation_parameters_collection_type["updateTodo:::FileTodoBatchUpdateReq"]=""
 operation_parameters_collection_type["add:::FolderAddOrEditReq"]=""
 operation_parameters_collection_type["batchUpdateSort:::FolderSortUpdateReq"]=""
 operation_parameters_collection_type["edit1:::folderId"]=""
@@ -485,6 +517,7 @@ operation_parameters_collection_type["queryPointsLog:::pointsLogQueryReq"]=""
 operation_parameters_collection_type["init:::PushInitReq"]=""
 operation_parameters_collection_type["testAndroidPush:::UmengAndroidPushReq"]=""
 operation_parameters_collection_type["testIosPush:::UmengIosPushReq"]=""
+operation_parameters_collection_type["redeem:::RedemptionCodeRedeemReq"]=""
 operation_parameters_collection_type["generateShareLink:::GenerateShareReq"]=""
 operation_parameters_collection_type["getSharedInfo:::shareId"]=""
 operation_parameters_collection_type["allocatePointsToTeam:::pointsAmount"]=""
@@ -955,12 +988,16 @@ read -r -d '' ops <<EOF
   ${CYAN}detail${OFF};
   ${CYAN}edit2${OFF};
   ${CYAN}edit3${OFF};
+  ${CYAN}grantDurationPackage${OFF};
   ${CYAN}grantMonthlyReward${OFF};
   ${CYAN}grantTeamUpgrade${OFF};
   ${CYAN}list2${OFF};
   ${CYAN}outPutLanguage${OFF};
   ${CYAN}recharge1${OFF};
+  ${CYAN}rechargeMembership${OFF};
+  ${CYAN}refreshMembershipQuota${OFF};
   ${CYAN}register${OFF};
+  ${CYAN}syncMembership${OFF};
   ${CYAN}terminate${OFF};
   ${CYAN}updatePwd${OFF};
 EOF
@@ -984,12 +1021,14 @@ read -r -d '' ops <<EOF
   ${CYAN}cleanBin${OFF};
   ${CYAN}cleanBinAll${OFF};
   ${CYAN}countByCategory${OFF};
+  ${CYAN}createSyncUploadPlaceholder${OFF};
   ${CYAN}delete${OFF};
   ${CYAN}edit${OFF};
   ${CYAN}getAvailableAIModelList${OFF};
   ${CYAN}getEvaluationList${OFF};
   ${CYAN}getStsToken${OFF};
   ${CYAN}getSupportLanguage${OFF};
+  ${CYAN}getSyncStsToken${OFF};
   ${CYAN}handleAudioMergeCallback${OFF};
   ${CYAN}info1${OFF};
   ${CYAN}list${OFF};
@@ -998,6 +1037,7 @@ read -r -d '' ops <<EOF
   ${CYAN}listByTimeRange${OFF};
   ${CYAN}markFileAsRead${OFF};
   ${CYAN}notify${OFF};
+  ${CYAN}notifySyncUpload${OFF};
   ${CYAN}page${OFF};
   ${CYAN}pageByCategory${OFF};
   ${CYAN}presign4Download${OFF};
@@ -1015,7 +1055,10 @@ echo "  $ops" | column -t -s ';'
 read -r -d '' ops <<EOF
   ${CYAN}aiModelProcessText${OFF};
   ${CYAN}batchGetConclusions${OFF};
+  ${CYAN}clearCompletedTodo${OFF};
+  ${CYAN}countTodoByDeadline${OFF};
   ${CYAN}deleteConclusion${OFF};
+  ${CYAN}deleteTodo${OFF};
   ${CYAN}editConclusion${OFF};
   ${CYAN}editMindMap${OFF};
   ${CYAN}editOutline${OFF};
@@ -1031,9 +1074,12 @@ read -r -d '' ops <<EOF
   ${CYAN}getOutline${OFF};
   ${CYAN}getTranscribeStatus${OFF};
   ${CYAN}handleTransCallback${OFF};
+  ${CYAN}listTodoByDeadlineRange${OFF};
   ${CYAN}listTranscriptionRecord${OFF};
+  ${CYAN}recoverTodo${OFF};
   ${CYAN}transferFile${OFF};
   ${CYAN}updateFeedback${OFF};
+  ${CYAN}updateTodo${OFF};
 EOF
 echo "  $ops" | column -t -s ';'
     echo ""
@@ -1067,6 +1113,12 @@ read -r -d '' ops <<EOF
   ${CYAN}init${OFF};
   ${CYAN}testAndroidPush${OFF};
   ${CYAN}testIosPush${OFF};
+EOF
+echo "  $ops" | column -t -s ';'
+    echo ""
+    echo -e "${BOLD}${WHITE}[redemptionController]${OFF}"
+read -r -d '' ops <<EOF
+  ${CYAN}redeem${OFF};
 EOF
 echo "  $ops" | column -t -s ';'
     echo ""
@@ -1437,6 +1489,23 @@ print_edit3_help() {
 }
 ##############################################################################
 #
+# Print help for grantDurationPackage operation
+#
+##############################################################################
+print_grantDurationPackage_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}grantDurationPackage - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
 # Print help for grantMonthlyReward operation
 #
 ##############################################################################
@@ -1516,12 +1585,60 @@ print_recharge1_help() {
 }
 ##############################################################################
 #
+# Print help for rechargeMembership operation
+#
+##############################################################################
+print_rechargeMembership_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}rechargeMembership - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
+# Print help for refreshMembershipQuota operation
+#
+##############################################################################
+print_refreshMembershipQuota_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}refreshMembershipQuota - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
 # Print help for register operation
 #
 ##############################################################################
 print_register_help() {
     echo ""
     echo -e "${BOLD}${WHITE}register - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
+# Print help for syncMembership operation
+#
+##############################################################################
+print_syncMembership_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}syncMembership - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
     echo -e ""
     echo -e "${BOLD}${WHITE}Parameters${OFF}"
     echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
@@ -1749,6 +1866,23 @@ print_countByCategory_help() {
 }
 ##############################################################################
 #
+# Print help for createSyncUploadPlaceholder operation
+#
+##############################################################################
+print_createSyncUploadPlaceholder_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}createSyncUploadPlaceholder - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
 # Print help for delete operation
 #
 ##############################################################################
@@ -1840,6 +1974,23 @@ print_getStsToken_help() {
 print_getSupportLanguage_help() {
     echo ""
     echo -e "${BOLD}${WHITE}getSupportLanguage - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
+# Print help for getSyncStsToken operation
+#
+##############################################################################
+print_getSyncStsToken_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}getSyncStsToken - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
     echo -e ""
     echo ""
     echo -e "${BOLD}${WHITE}Responses${OFF}"
@@ -1973,6 +2124,23 @@ print_markFileAsRead_help() {
 print_notify_help() {
     echo ""
     echo -e "${BOLD}${WHITE}notify - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}fileId${OFF} ${BLUE}[string]${OFF} ${RED}(required)${OFF} ${CYAN}(default: null)${OFF} - ${YELLOW} Specify as: fileId=value${OFF}" \
+        | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
+# Print help for notifySyncUpload operation
+#
+##############################################################################
+print_notifySyncUpload_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}notifySyncUpload - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
     echo -e ""
     echo -e "${BOLD}${WHITE}Parameters${OFF}"
     echo -e "  * ${GREEN}fileId${OFF} ${BLUE}[string]${OFF} ${RED}(required)${OFF} ${CYAN}(default: null)${OFF} - ${YELLOW} Specify as: fileId=value${OFF}" \
@@ -2189,6 +2357,34 @@ print_batchGetConclusions_help() {
 }
 ##############################################################################
 #
+# Print help for clearCompletedTodo operation
+#
+##############################################################################
+print_clearCompletedTodo_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}clearCompletedTodo - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
+# Print help for countTodoByDeadline operation
+#
+##############################################################################
+print_countTodoByDeadline_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}countTodoByDeadline - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
 # Print help for deleteConclusion operation
 #
 ##############################################################################
@@ -2198,6 +2394,23 @@ print_deleteConclusion_help() {
     echo -e ""
     echo -e "${BOLD}${WHITE}Parameters${OFF}"
     echo -e "  * ${GREEN}conclusionId${OFF} ${BLUE}[string]${OFF} ${RED}(required)${OFF} ${CYAN}(default: null)${OFF} -  ${YELLOW}Specify as: conclusionId=value${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
+# Print help for deleteTodo operation
+#
+##############################################################################
+print_deleteTodo_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}deleteTodo - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
     echo ""
     echo -e "${BOLD}${WHITE}Responses${OFF}"
     code=200
@@ -2485,6 +2698,23 @@ print_handleTransCallback_help() {
 }
 ##############################################################################
 #
+# Print help for listTodoByDeadlineRange operation
+#
+##############################################################################
+print_listTodoByDeadlineRange_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}listTodoByDeadlineRange - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
 # Print help for listTranscriptionRecord operation
 #
 ##############################################################################
@@ -2499,6 +2729,23 @@ print_listTranscriptionRecord_help() {
         | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
     echo -e "  * ${GREEN}fileId${OFF} ${BLUE}[string]${OFF} ${CYAN}(default: null)${OFF} - ${YELLOW} Specify as: fileId=value${OFF}" \
         | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
+# Print help for recoverTodo operation
+#
+##############################################################################
+print_recoverTodo_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}recoverTodo - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
     echo ""
     echo -e "${BOLD}${WHITE}Responses${OFF}"
     code=200
@@ -2529,6 +2776,23 @@ print_transferFile_help() {
 print_updateFeedback_help() {
     echo ""
     echo -e "${BOLD}${WHITE}updateFeedback - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
+# Print help for updateTodo operation
+#
+##############################################################################
+print_updateTodo_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}updateTodo - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
     echo -e ""
     echo -e "${BOLD}${WHITE}Parameters${OFF}"
     echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
@@ -2751,6 +3015,23 @@ print_testAndroidPush_help() {
 print_testIosPush_help() {
     echo ""
     echo -e "${BOLD}${WHITE}testIosPush - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
+# Print help for redeem operation
+#
+##############################################################################
+print_redeem_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}redeem - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
     echo -e ""
     echo -e "${BOLD}${WHITE}Parameters${OFF}"
     echo -e "  * ${GREEN}body${OFF} ${BLUE}[application/json]${OFF} ${RED}(required)${OFF}${OFF} - " | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
@@ -4092,6 +4373,84 @@ call_edit3() {
 
 ##############################################################################
 #
+# Call grantDurationPackage operation
+#
+##############################################################################
+call_grantDurationPackage() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/customer/membership/package/grant" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    local body_json_curl=""
+
+    #
+    # Check if the user provided 'Content-type' headers in the
+    # command line. If not try to set them based on the OpenAPI specification
+    # if values produces and consumes are defined unambiguously
+    #
+    if [[ -z $header_content_type ]]; then
+        header_content_type="application/json"
+    fi
+
+
+    if [[ -z $header_content_type && "$force" = false ]]; then
+        :
+        echo "ERROR: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+        echo -e "\\t- application/json"
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ -n $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
+    #
+    else
+        body_json_curl=$(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        else
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        fi
+    fi
+}
+
+##############################################################################
+#
 # Call grantMonthlyReward operation
 #
 ##############################################################################
@@ -4314,6 +4673,120 @@ call_recharge1() {
 
 ##############################################################################
 #
+# Call rechargeMembership operation
+#
+##############################################################################
+call_rechargeMembership() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/customer/membership/recharge" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    local body_json_curl=""
+
+    #
+    # Check if the user provided 'Content-type' headers in the
+    # command line. If not try to set them based on the OpenAPI specification
+    # if values produces and consumes are defined unambiguously
+    #
+    if [[ -z $header_content_type ]]; then
+        header_content_type="application/json"
+    fi
+
+
+    if [[ -z $header_content_type && "$force" = false ]]; then
+        :
+        echo "ERROR: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+        echo -e "\\t- application/json"
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ -n $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
+    #
+    else
+        body_json_curl=$(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        else
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        fi
+    fi
+}
+
+##############################################################################
+#
+# Call refreshMembershipQuota operation
+#
+##############################################################################
+call_refreshMembershipQuota() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/customer/membership/refresh" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="GET"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    if [[ "$print_curl" = true ]]; then
+        echo "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    else
+        eval "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    fi
+}
+
+##############################################################################
+#
 # Call register operation
 #
 ##############################################################################
@@ -4327,6 +4800,84 @@ call_register() {
     local path
 
     if ! path=$(build_request_path "/api/business/customer/register" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    local body_json_curl=""
+
+    #
+    # Check if the user provided 'Content-type' headers in the
+    # command line. If not try to set them based on the OpenAPI specification
+    # if values produces and consumes are defined unambiguously
+    #
+    if [[ -z $header_content_type ]]; then
+        header_content_type="application/json"
+    fi
+
+
+    if [[ -z $header_content_type && "$force" = false ]]; then
+        :
+        echo "ERROR: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+        echo -e "\\t- application/json"
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ -n $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
+    #
+    else
+        body_json_curl=$(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        else
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        fi
+    fi
+}
+
+##############################################################################
+#
+# Call syncMembership operation
+#
+##############################################################################
+call_syncMembership() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/customer/membership/sync" path_parameter_names query_parameter_names); then
         ERROR_MSG=$path
         exit 1
     fi
@@ -5070,6 +5621,84 @@ call_countByCategory() {
 
 ##############################################################################
 #
+# Call createSyncUploadPlaceholder operation
+#
+##############################################################################
+call_createSyncUploadPlaceholder() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/file/sync/pre/create" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    local body_json_curl=""
+
+    #
+    # Check if the user provided 'Content-type' headers in the
+    # command line. If not try to set them based on the OpenAPI specification
+    # if values produces and consumes are defined unambiguously
+    #
+    if [[ -z $header_content_type ]]; then
+        header_content_type="application/json"
+    fi
+
+
+    if [[ -z $header_content_type && "$force" = false ]]; then
+        :
+        echo "ERROR: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+        echo -e "\\t- application/json"
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ -n $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
+    #
+    else
+        body_json_curl=$(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        else
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        fi
+    fi
+}
+
+##############################################################################
+#
 # Call delete operation
 #
 ##############################################################################
@@ -5365,6 +5994,84 @@ call_getSupportLanguage() {
         echo "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
     else
         eval "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    fi
+}
+
+##############################################################################
+#
+# Call getSyncStsToken operation
+#
+##############################################################################
+call_getSyncStsToken() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/file/sync/pre/sts" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    local body_json_curl=""
+
+    #
+    # Check if the user provided 'Content-type' headers in the
+    # command line. If not try to set them based on the OpenAPI specification
+    # if values produces and consumes are defined unambiguously
+    #
+    if [[ -z $header_content_type ]]; then
+        header_content_type="application/json"
+    fi
+
+
+    if [[ -z $header_content_type && "$force" = false ]]; then
+        :
+        echo "ERROR: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+        echo -e "\\t- application/json"
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ -n $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
+    #
+    else
+        body_json_curl=$(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        else
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        fi
     fi
 }
 
@@ -5677,6 +6384,42 @@ call_notify() {
     local path
 
     if ! path=$(build_request_path "/api/business/file/upload/notify" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="GET"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    if [[ "$print_curl" = true ]]; then
+        echo "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    else
+        eval "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    fi
+}
+
+##############################################################################
+#
+# Call notifySyncUpload operation
+#
+##############################################################################
+call_notifySyncUpload() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=(fileId)
+    local path
+
+    if ! path=$(build_request_path "/api/business/file/sync/pre/notify" path_parameter_names query_parameter_names); then
         ERROR_MSG=$path
         exit 1
     fi
@@ -6384,6 +7127,78 @@ call_batchGetConclusions() {
 
 ##############################################################################
 #
+# Call clearCompletedTodo operation
+#
+##############################################################################
+call_clearCompletedTodo() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/file/todo/clear" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    if [[ "$print_curl" = true ]]; then
+        echo "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    else
+        eval "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    fi
+}
+
+##############################################################################
+#
+# Call countTodoByDeadline operation
+#
+##############################################################################
+call_countTodoByDeadline() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/file/todo/count" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="GET"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    if [[ "$print_curl" = true ]]; then
+        echo "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    else
+        eval "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    fi
+}
+
+##############################################################################
+#
 # Call deleteConclusion operation
 #
 ##############################################################################
@@ -6415,6 +7230,84 @@ call_deleteConclusion() {
         echo "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
     else
         eval "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    fi
+}
+
+##############################################################################
+#
+# Call deleteTodo operation
+#
+##############################################################################
+call_deleteTodo() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/file/todo/delete" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    local body_json_curl=""
+
+    #
+    # Check if the user provided 'Content-type' headers in the
+    # command line. If not try to set them based on the OpenAPI specification
+    # if values produces and consumes are defined unambiguously
+    #
+    if [[ -z $header_content_type ]]; then
+        header_content_type="application/json"
+    fi
+
+
+    if [[ -z $header_content_type && "$force" = false ]]; then
+        :
+        echo "ERROR: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+        echo -e "\\t- application/json"
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ -n $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
+    #
+    else
+        body_json_curl=$(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        else
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        fi
     fi
 }
 
@@ -7338,6 +8231,84 @@ call_handleTransCallback() {
 
 ##############################################################################
 #
+# Call listTodoByDeadlineRange operation
+#
+##############################################################################
+call_listTodoByDeadlineRange() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/file/todo/list" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    local body_json_curl=""
+
+    #
+    # Check if the user provided 'Content-type' headers in the
+    # command line. If not try to set them based on the OpenAPI specification
+    # if values produces and consumes are defined unambiguously
+    #
+    if [[ -z $header_content_type ]]; then
+        header_content_type="application/json"
+    fi
+
+
+    if [[ -z $header_content_type && "$force" = false ]]; then
+        :
+        echo "ERROR: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+        echo -e "\\t- application/json"
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ -n $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
+    #
+    else
+        body_json_curl=$(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        else
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        fi
+    fi
+}
+
+##############################################################################
+#
 # Call listTranscriptionRecord operation
 #
 ##############################################################################
@@ -7369,6 +8340,84 @@ call_listTranscriptionRecord() {
         echo "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
     else
         eval "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    fi
+}
+
+##############################################################################
+#
+# Call recoverTodo operation
+#
+##############################################################################
+call_recoverTodo() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/file/todo/recover" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    local body_json_curl=""
+
+    #
+    # Check if the user provided 'Content-type' headers in the
+    # command line. If not try to set them based on the OpenAPI specification
+    # if values produces and consumes are defined unambiguously
+    #
+    if [[ -z $header_content_type ]]; then
+        header_content_type="application/json"
+    fi
+
+
+    if [[ -z $header_content_type && "$force" = false ]]; then
+        :
+        echo "ERROR: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+        echo -e "\\t- application/json"
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ -n $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
+    #
+    else
+        body_json_curl=$(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        else
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        fi
     fi
 }
 
@@ -7469,6 +8518,84 @@ call_updateFeedback() {
         exit 1
     fi
     local method="PUT"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    local body_json_curl=""
+
+    #
+    # Check if the user provided 'Content-type' headers in the
+    # command line. If not try to set them based on the OpenAPI specification
+    # if values produces and consumes are defined unambiguously
+    #
+    if [[ -z $header_content_type ]]; then
+        header_content_type="application/json"
+    fi
+
+
+    if [[ -z $header_content_type && "$force" = false ]]; then
+        :
+        echo "ERROR: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+        echo -e "\\t- application/json"
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ -n $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
+    #
+    else
+        body_json_curl=$(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        else
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        fi
+    fi
+}
+
+##############################################################################
+#
+# Call updateTodo operation
+#
+##############################################################################
+call_updateTodo() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/file/todo/update" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
     local headers_curl
     headers_curl=$(header_arguments_to_curl)
     if [[ -n $header_accept ]]; then
@@ -8185,6 +9312,84 @@ call_testIosPush() {
     local path
 
     if ! path=$(build_request_path "/api/business/push/ios/test" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="POST"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    local body_json_curl=""
+
+    #
+    # Check if the user provided 'Content-type' headers in the
+    # command line. If not try to set them based on the OpenAPI specification
+    # if values produces and consumes are defined unambiguously
+    #
+    if [[ -z $header_content_type ]]; then
+        header_content_type="application/json"
+    fi
+
+
+    if [[ -z $header_content_type && "$force" = false ]]; then
+        :
+        echo "ERROR: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+        echo -e "\\t- application/json"
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ -n $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
+    #
+    else
+        body_json_curl=$(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        else
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        fi
+    fi
+}
+
+##############################################################################
+#
+# Call redeem operation
+#
+##############################################################################
+call_redeem() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=()
+    local path
+
+    if ! path=$(build_request_path "/api/business/redemption/redeem" path_parameter_names query_parameter_names); then
         ERROR_MSG=$path
         exit 1
     fi
@@ -9662,6 +10867,9 @@ case $key in
     edit3)
     operation="edit3"
     ;;
+    grantDurationPackage)
+    operation="grantDurationPackage"
+    ;;
     grantMonthlyReward)
     operation="grantMonthlyReward"
     ;;
@@ -9677,8 +10885,17 @@ case $key in
     recharge1)
     operation="recharge1"
     ;;
+    rechargeMembership)
+    operation="rechargeMembership"
+    ;;
+    refreshMembershipQuota)
+    operation="refreshMembershipQuota"
+    ;;
     register)
     operation="register"
+    ;;
+    syncMembership)
+    operation="syncMembership"
     ;;
     terminate)
     operation="terminate"
@@ -9719,6 +10936,9 @@ case $key in
     countByCategory)
     operation="countByCategory"
     ;;
+    createSyncUploadPlaceholder)
+    operation="createSyncUploadPlaceholder"
+    ;;
     delete)
     operation="delete"
     ;;
@@ -9736,6 +10956,9 @@ case $key in
     ;;
     getSupportLanguage)
     operation="getSupportLanguage"
+    ;;
+    getSyncStsToken)
+    operation="getSyncStsToken"
     ;;
     handleAudioMergeCallback)
     operation="handleAudioMergeCallback"
@@ -9760,6 +10983,9 @@ case $key in
     ;;
     notify)
     operation="notify"
+    ;;
+    notifySyncUpload)
+    operation="notifySyncUpload"
     ;;
     page)
     operation="page"
@@ -9797,8 +11023,17 @@ case $key in
     batchGetConclusions)
     operation="batchGetConclusions"
     ;;
+    clearCompletedTodo)
+    operation="clearCompletedTodo"
+    ;;
+    countTodoByDeadline)
+    operation="countTodoByDeadline"
+    ;;
     deleteConclusion)
     operation="deleteConclusion"
+    ;;
+    deleteTodo)
+    operation="deleteTodo"
     ;;
     editConclusion)
     operation="editConclusion"
@@ -9845,14 +11080,23 @@ case $key in
     handleTransCallback)
     operation="handleTransCallback"
     ;;
+    listTodoByDeadlineRange)
+    operation="listTodoByDeadlineRange"
+    ;;
     listTranscriptionRecord)
     operation="listTranscriptionRecord"
+    ;;
+    recoverTodo)
+    operation="recoverTodo"
     ;;
     transferFile)
     operation="transferFile"
     ;;
     updateFeedback)
     operation="updateFeedback"
+    ;;
+    updateTodo)
+    operation="updateTodo"
     ;;
     add)
     operation="add"
@@ -9892,6 +11136,9 @@ case $key in
     ;;
     testIosPush)
     operation="testIosPush"
+    ;;
+    redeem)
+    operation="redeem"
     ;;
     generateShareLink)
     operation="generateShareLink"
@@ -10112,6 +11359,9 @@ case $operation in
     edit3)
     call_edit3
     ;;
+    grantDurationPackage)
+    call_grantDurationPackage
+    ;;
     grantMonthlyReward)
     call_grantMonthlyReward
     ;;
@@ -10127,8 +11377,17 @@ case $operation in
     recharge1)
     call_recharge1
     ;;
+    rechargeMembership)
+    call_rechargeMembership
+    ;;
+    refreshMembershipQuota)
+    call_refreshMembershipQuota
+    ;;
     register)
     call_register
+    ;;
+    syncMembership)
+    call_syncMembership
     ;;
     terminate)
     call_terminate
@@ -10169,6 +11428,9 @@ case $operation in
     countByCategory)
     call_countByCategory
     ;;
+    createSyncUploadPlaceholder)
+    call_createSyncUploadPlaceholder
+    ;;
     delete)
     call_delete
     ;;
@@ -10186,6 +11448,9 @@ case $operation in
     ;;
     getSupportLanguage)
     call_getSupportLanguage
+    ;;
+    getSyncStsToken)
+    call_getSyncStsToken
     ;;
     handleAudioMergeCallback)
     call_handleAudioMergeCallback
@@ -10210,6 +11475,9 @@ case $operation in
     ;;
     notify)
     call_notify
+    ;;
+    notifySyncUpload)
+    call_notifySyncUpload
     ;;
     page)
     call_page
@@ -10247,8 +11515,17 @@ case $operation in
     batchGetConclusions)
     call_batchGetConclusions
     ;;
+    clearCompletedTodo)
+    call_clearCompletedTodo
+    ;;
+    countTodoByDeadline)
+    call_countTodoByDeadline
+    ;;
     deleteConclusion)
     call_deleteConclusion
+    ;;
+    deleteTodo)
+    call_deleteTodo
     ;;
     editConclusion)
     call_editConclusion
@@ -10295,14 +11572,23 @@ case $operation in
     handleTransCallback)
     call_handleTransCallback
     ;;
+    listTodoByDeadlineRange)
+    call_listTodoByDeadlineRange
+    ;;
     listTranscriptionRecord)
     call_listTranscriptionRecord
+    ;;
+    recoverTodo)
+    call_recoverTodo
     ;;
     transferFile)
     call_transferFile
     ;;
     updateFeedback)
     call_updateFeedback
+    ;;
+    updateTodo)
+    call_updateTodo
     ;;
     add)
     call_add
@@ -10342,6 +11628,9 @@ case $operation in
     ;;
     testIosPush)
     call_testIosPush
+    ;;
+    redeem)
+    call_redeem
     ;;
     generateShareLink)
     call_generateShareLink

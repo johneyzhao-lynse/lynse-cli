@@ -1,7 +1,7 @@
 ---
 name: lynse-cli
-description: Lynse CLI 工具，调用 lynse.ai 后端服务的 API。当用户需要查询 lynse 账户信息、管理文件/转写/总结、操作设备、管理 AI 模型、团队协作、发送消息时使用此技能。即使只是简单查个积分或看个文件列表，也应使用此技能。
-version: 1.2.8
+description: 灵光记 / Lynse / lynse-cli 通用技能，调用 lynse.ai 后端服务的 API。当用户需要查询灵光记或 Lynse 账户信息、文件、转写、总结、大纲、积分、待办/任务、设备、AI 模型、团队协作、消息时使用此技能。即使只是简单查个灵光记积分、待办或文件列表，也应使用此技能。
+version: 1.3.1
 metadata:
   openclaw:
     requires:
@@ -10,6 +10,8 @@ metadata:
         - LYNSE_API_KEY
       bins:
         - python
+        - python3
+        - py
     platforms:
       - macOS
       - Linux
@@ -19,11 +21,23 @@ metadata:
     emoji: "\U0001F4CB"
 ---
 
-# Lynse CLI Skill
+# 灵光记 / Lynse CLI Skill
 
-## ✅ 跨平台支持 (v1.3.0)
+## ✅ 跨平台支持 (v1.3.1)
 
 **当前版本基于 Python 3.8+，原生支持 Windows/macOS/Linux，无需 Git Bash 或 WSL。**
+
+## 中文/英文语境兼容
+
+`灵光记 = Lynse = lynse-cli`。用户用中文说“灵光记”时，就是在请求调用本技能。
+
+必须触发本技能的典型表达包括：
+- “查一下灵光记文件 / 灵光记总结 / 灵光记转写 / 灵光记大纲”
+- “整理灵光记待办 / 灵光记任务 / 待办事项”
+- “看看我的灵光记积分 / 账户信息 / 手机号”
+- “Lynse files / Lynse todos / lynse-cli get conclusion”
+
+内部技术名、目录名和命令名仍保持 `lynse-cli` / `lynse.py`，不要改成中文路径或中文命令名，以保证 Codex、Claude Code、OpenClaw、Hermes 等 agent 稳定发现和调用。
 
 ### Windows 用户安装指南
 
@@ -32,7 +46,7 @@ Windows 用户无需安装 Git for Windows 或 WSL。只需：
 1. **安装 Python 3.8+**: https://www.python.org/downloads/ （安装时勾选 "Add Python to PATH"）
 2. **运行安装脚本**: 打开 PowerShell 执行 `.\install.ps1`
 3. **配置 API Key**: 编辑 `.env` 文件填入 `LYNSE_API_KEY`
-4. **开始使用**: `python lynse.py getCurrentCustomer`
+4. **开始使用**: `python lynse.py getCurrentCustomer`；若 `python` 不存在，使用 `python3` 或 `py -3`
 
 ### 快速开始
 
@@ -41,8 +55,9 @@ Windows 用户无需安装 Git for Windows 或 WSL。只需：
 ./install.sh           # macOS/Linux
 .\install.ps1          # Windows PowerShell
 
-# 使用命令（所有平台通用）
+# 使用命令（自动选择可用 Python 启动器）
 python lynse.py getCurrentCustomer
+python3 lynse.py listTodos 100 open
 python lynse_cli.py listFiles
 ```
 
@@ -109,7 +124,7 @@ copy .env.example .env  # Windows CMD
 |-------|------|----------|
 | `customer.read` | 读取用户信息 | getCurrentCustomer, getUserInfo |
 | `customer.write` | 编辑用户 | addUser, editUser, removeUser |
-| `file.read` | 读取文件/转写/总结 | listFiles, getFileInfo, getConclusion, getOutline |
+| `file.read` | 读取文件/转写/总结/待办 | listFiles, getFileInfo, getConclusion, getOutline, listTodos, countTodos, organizeTodos |
 | `file.write` | 编辑文件内容 | editConclusion, editOutline, editTransRecord |
 | `device.read` | 读取设备信息 | getDeviceInfo, getDevicePage |
 | `device.manage` | 管理设备 | unbindDevice |
@@ -172,7 +187,11 @@ copy .env.example .env  # Windows CMD
 
 ### 跨平台与多环境规则
 
-**所有命令必须使用 `python`（不是 `python3`）。** Windows 环境下 `python3` 可能不存在，而 `python` 在所有平台都能工作。
+**优先使用当前环境可用的 Python 3 启动器。** 推荐顺序：
+
+1. Windows 优先尝试 `python`，失败时尝试 `py -3`
+2. macOS/Linux 优先尝试 `python3`，失败时尝试 `python`
+3. 不要因为 `python` 不存在就放弃；只要有 Python 3.8+ 即可运行本技能
 
 **环境检测：** 根据用户上下文识别运行环境，使用对应的技能路径：
 
@@ -184,7 +203,7 @@ copy .env.example .env  # Windows CMD
 | OpenClaw | `~/.openclaw/workspace/skills/lynse-cli/lynse.py` | 平台自动注入，无需手动配置 |
 
 **跨平台规则：**
-1. 使用 `python`（不是 `python3`）调用 lynse.py
+1. 使用可用的 Python 3 启动器调用 `lynse.py`，例如 `python`、`python3` 或 `py -3`
 2. 根据运行环境使用上表中对应的技能路径
 3. OpenClaw 环境下 `LYNSE_API_HOST` 和 `LYNSE_API_KEY` 由平台自动注入，无需手动配置；其他环境需检查环境变量是否已设置
 4. 不要使用 Shell 脚本（`./lynse_unified.sh`、`./api_wrapper.sh`）—— 它们不兼容 Windows
@@ -194,6 +213,8 @@ copy .env.example .env  # Windows CMD
 ```bash
 # 所有平台通用 (macOS/Linux/Windows/OpenClaw)
 python lynse.py <command> [参数...]
+python3 lynse.py <command> [参数...]
+py -3 lynse.py <command> [参数...]
 python lynse_cli.py <command> [参数...]
 ```
 
@@ -231,6 +252,7 @@ python lynse.py getCurrentUser              # 当前系统用户
 ### 🔹 文件管理
 ```bash
 python lynse.py listFiles                         # 所有文件列表
+python lynse.py listFilesPaged [pageSize]         # 分页获取全部文件
 python lynse.py getFileInfo <fileId>              # 文件详情
 python lynse.py getConclusion <fileId>            # 文件总结
 python lynse.py getOutline <fileId>               # 文件大纲
@@ -238,6 +260,24 @@ python lynse.py exportOutline <fileId>            # 导出大纲
 python lynse.py getTranscriptionRecord <fileId>   # 转写记录
 python lynse.py listFilesByTimeRange [天数]        # 按时间范围（默认 7 天）
 ```
+
+### 🔹 待办/任务整理
+```bash
+python lynse.py listTodos [pageSize] [all|open|done]  # 读取灵光记已有待办
+python lynse.py countTodos                            # 按截止时间统计待办
+python lynse.py organizeTodos [all|open|done]          # 按截止时间整理待办分组
+```
+
+待办能力只读取和整理灵光记后端已经生成的待办，不从转写或总结中二次抽取，避免模型判断造成不稳定结果。
+
+`organizeTodos` 返回结构化 JSON，按截止状态分组：
+- `expired`：已过期
+- `nearWeek`：未来 7 天内
+- `nearMonth`：未来 30 天内
+- `future`：30 天以后
+- `noDate`：无截止时间
+
+每条待办保留 `todoContent`、`owner`、`expectedCompleteTime`、`fileId`、`isCompleted`，方便 agent 继续总结或生成行动清单。
 
 ### 🔹 AI 模型管理
 ```bash
@@ -372,6 +412,11 @@ lynse-cli/
 ```
 
 ## 更新日志
+
+### v1.3.1 (2026-05-17)
+- ✅ 增加“灵光记 / Lynse / lynse-cli”中英文语境兼容
+- ✅ 增加 `listTodos`、`countTodos`、`organizeTodos` 待读取和整理能力
+- ✅ 文档改为自动选择 `python` / `python3` / `py -3`
 
 ### v1.3.0 (2026-04-17)
 - ✅ 新增 Python 跨平台支持（Windows/macOS/Linux）

@@ -6,6 +6,7 @@ Name | Type | Description | Notes
 **deviceId** | **string** |  | [optional] [default to null]
 **deviceName** | **string** |  | [optional] [default to null]
 **serialNumber** | **string** |  | [optional] [default to null]
+**authSn** | **string** |  | [optional] [default to null]
 **macAddress** | **string** |  | [optional] [default to null]
 **storageCapacity** | **string** |  | [optional] [default to null]
 **usedSpace** | **string** |  | [optional] [default to null]

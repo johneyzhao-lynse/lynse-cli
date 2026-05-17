@@ -9,12 +9,16 @@ Method | HTTP request | Description
 [**detail**](CustomerControllerApi.md#detail) | **GET** /api/business/customer/detail | 
 [**edit2**](CustomerControllerApi.md#edit2) | **PUT** /api/business/customer | 
 [**edit3**](CustomerControllerApi.md#edit3) | **PUT** /api/business/customer/{customerId} | 
+[**grantDurationPackage**](CustomerControllerApi.md#grantDurationPackage) | **POST** /api/business/customer/membership/package/grant | 
 [**grantMonthlyReward**](CustomerControllerApi.md#grantMonthlyReward) | **GET** /api/business/customer/bonus | 
 [**grantTeamUpgrade**](CustomerControllerApi.md#grantTeamUpgrade) | **GET** /api/business/customer/grantTeamUpgrade | 
 [**list2**](CustomerControllerApi.md#list2) | **GET** /api/business/customer/list | 
 [**outPutLanguage**](CustomerControllerApi.md#outPutLanguage) | **PUT** /api/business/customer/outPutLanguage | 
 [**recharge1**](CustomerControllerApi.md#recharge1) | **POST** /api/business/customer/recharge | 
+[**rechargeMembership**](CustomerControllerApi.md#rechargeMembership) | **POST** /api/business/customer/membership/recharge | 
+[**refreshMembershipQuota**](CustomerControllerApi.md#refreshMembershipQuota) | **GET** /api/business/customer/membership/refresh | 
 [**register**](CustomerControllerApi.md#register) | **POST** /api/business/customer/register | 
+[**syncMembership**](CustomerControllerApi.md#syncMembership) | **POST** /api/business/customer/membership/sync | 
 [**terminate**](CustomerControllerApi.md#terminate) | **DELETE** /api/business/customer | 
 [**updatePwd**](CustomerControllerApi.md#updatePwd) | **PUT** /api/business/customer/updatePwd | 
 
@@ -166,6 +170,39 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **customerId** | **string** |  | [default to null]
  **customerUpdateReq** | [**CustomerUpdateReq**](CustomerUpdateReq.md) |  |
+
+### Return type
+
+[**ResultBoolean**](ResultBoolean.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## grantDurationPackage
+
+
+
+### Example
+
+```bash
+ grantDurationPackage
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **customerDurationPackageGrantReq** | [**CustomerDurationPackageGrantReq**](CustomerDurationPackageGrantReq.md) |  |
 
 ### Return type
 
@@ -342,6 +379,69 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 
+## rechargeMembership
+
+
+
+### Example
+
+```bash
+ rechargeMembership
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **customerMembershipRechargeReq** | [**CustomerMembershipRechargeReq**](CustomerMembershipRechargeReq.md) |  |
+
+### Return type
+
+[**ResultBoolean**](ResultBoolean.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## refreshMembershipQuota
+
+
+
+### Example
+
+```bash
+ refreshMembershipQuota
+```
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**ResultCustomerMembershipQuotaVO**](ResultCustomerMembershipQuotaVO.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not Applicable
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
 ## register
 
 
@@ -362,6 +462,39 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**ResultString**](ResultString.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## syncMembership
+
+
+
+### Example
+
+```bash
+ syncMembership
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **customerMembershipSyncReq** | [**CustomerMembershipSyncReq**](CustomerMembershipSyncReq.md) |  |
+
+### Return type
+
+[**ResultCustomerMembershipQuotaVO**](ResultCustomerMembershipQuotaVO.md)
 
 ### Authorization
 

@@ -118,6 +118,7 @@ Class | Method | HTTP request | Description
 *AuthControllerApi* | [**updatePwd**](docs/AuthControllerApi.md#updatepwd) | **POST** /api/auth/updatePwd | 
 *AuthControllerApi* | [**verifyWechatSignature**](docs/AuthControllerApi.md#verifywechatsignature) | **GET** /api/auth/check | 
 *AuthPoolControllerApi* | [**getPoolStatus**](docs/AuthPoolControllerApi.md#getpoolstatus) | **GET** /api/auth/pool/status | 
+*MessageControllerApi* | [**emailCode**](docs/MessageControllerApi.md#emailcode) | **GET** /api/auth/captcha/email | 
 *MessageControllerApi* | [**smsCode**](docs/MessageControllerApi.md#smscode) | **GET** /api/auth/captcha/sms | 
 
 

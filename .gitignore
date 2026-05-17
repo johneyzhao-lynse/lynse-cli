@@ -1,5 +1,6 @@
 .env
 token_cache.json
+.token_cache
 __pycache__/
 *.pyc
 autoresearch-lynse-cli/

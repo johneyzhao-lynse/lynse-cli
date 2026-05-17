@@ -32,7 +32,7 @@ Name | Type | Description | Notes
 **attr** | **string** |  | [optional] [default to null]
 **fileAcl** | **string** |  | [optional] [default to null]
 **thFileAcl** | **string** |  | [optional] [default to null]
-**hashInfo** | **string** |  | [optional] [default to null]
+**md5** | **string** |  | [optional] [default to null]
 **uploadId** | **string** |  | [optional] [default to null]
 **uploadStatus** | **integer** |  | [optional] [default to null]
 **isDeleted** | **integer** |  | [optional] [default to null]

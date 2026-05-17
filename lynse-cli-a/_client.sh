@@ -10,7 +10,7 @@
 # !
 # ! Based on: https://github.com/Valodim/zsh-curl-completion/blob/master/_curl
 # !
-# ! Generator version: 7.21.0
+# ! Generator version: 7.22.0
 # !
 # !
 # ! Installation:
@@ -310,7 +310,8 @@ case $state in
             "terminate[]" \
             "updatePhone[]" \
             "updatePwd[]" \
-            "verifyWechatSignature[]"             "getPoolStatus[]"             "smsCode[]" \
+            "verifyWechatSignature[]"             "getPoolStatus[]"             "emailCode[]" \
+            "smsCode[]" \
 
     _arguments "(--help)--help[Print information about operation]"
 
@@ -417,6 +418,14 @@ case $state in
         local -a _op_arguments
         _op_arguments=(
                               )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
+      emailCode)
+        local -a _op_arguments
+        _op_arguments=(
+                    "email=:[QUERY] "
+"actionType=:[QUERY] "
+          )
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
       smsCode)

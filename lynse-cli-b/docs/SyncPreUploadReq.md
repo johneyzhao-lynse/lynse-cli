@@ -1,4 +1,4 @@
-# PreUploadReq
+# SyncPreUploadReq
 
 ## Properties
 Name | Type | Description | Notes
@@ -15,6 +15,7 @@ Name | Type | Description | Notes
 **teamId** | **string** |  | [optional] [default to null]
 **md5** | **string** |  | [optional] [default to null]
 **recordStartTime** | **string** |  | [optional] [default to null]
+**fileId** | **string** |  | [default to null]
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

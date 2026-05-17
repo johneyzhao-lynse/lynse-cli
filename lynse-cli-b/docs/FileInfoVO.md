@@ -31,7 +31,6 @@ Name | Type | Description | Notes
 **attr** | **map[String, map]** |  | [optional] [default to null]
 **fileAcl** | **string** |  | [optional] [default to null]
 **thFileAcl** | **string** |  | [optional] [default to null]
-**hashInfo** | [**FileInfoVOHashInfo**](FileInfoVOHashInfo.md) |  | [optional] [default to null]
 **uploadId** | **string** |  | [optional] [default to null]
 **uploadStatus** | **integer** |  | [optional] [default to null]
 **isDeleted** | **integer** |  | [optional] [default to null]
@@ -57,6 +56,7 @@ Name | Type | Description | Notes
 **nickname** | **string** |  | [optional] [default to null]
 **folderName** | **string** |  | [optional] [default to null]
 **analysisStatus** | **string** |  | [optional] [default to null]
+**md5** | **string** |  | [optional] [default to null]
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

@@ -10,7 +10,7 @@
 # !
 # ! Based on: https://github.com/Valodim/zsh-curl-completion/blob/master/_curl
 # !
-# ! Generator version: 7.21.0
+# ! Generator version: 7.22.0
 # !
 # !
 # ! Installation:
@@ -308,12 +308,16 @@ case $state in
             "detail[]" \
             "edit2[]" \
             "edit3[]" \
+            "grantDurationPackage[]" \
             "grantMonthlyReward[]" \
             "grantTeamUpgrade[]" \
             "list2[]" \
             "outPutLanguage[]" \
             "recharge1[]" \
+            "rechargeMembership[]" \
+            "refreshMembershipQuota[]" \
             "register[]" \
+            "syncMembership[]" \
             "terminate[]" \
             "updatePwd[]"             "bind[]" \
             "isBound[]" \
@@ -325,12 +329,14 @@ case $state in
             "cleanBin[]" \
             "cleanBinAll[]" \
             "countByCategory[]" \
+            "createSyncUploadPlaceholder[]" \
             "delete[]" \
             "edit[]" \
             "getAvailableAIModelList[]" \
             "getEvaluationList[]" \
             "getStsToken[]" \
             "getSupportLanguage[]" \
+            "getSyncStsToken[]" \
             "handleAudioMergeCallback[]" \
             "info1[]" \
             "list[]" \
@@ -339,6 +345,7 @@ case $state in
             "listByTimeRange[]" \
             "markFileAsRead[]" \
             "notify[]" \
+            "notifySyncUpload[]" \
             "page[]" \
             "pageByCategory[]" \
             "presign4Download[]" \
@@ -350,7 +357,10 @@ case $state in
             "submitAudioMerge[]" \
             "testAudioMerge[]"             "aiModelProcessText[]" \
             "batchGetConclusions[]" \
+            "clearCompletedTodo[]" \
+            "countTodoByDeadline[]" \
             "deleteConclusion[]" \
+            "deleteTodo[]" \
             "editConclusion[]" \
             "editMindMap[]" \
             "editOutline[]" \
@@ -366,9 +376,12 @@ case $state in
             "getOutline[]" \
             "getTranscribeStatus[]" \
             "handleTransCallback[]" \
+            "listTodoByDeadlineRange[]" \
             "listTranscriptionRecord[]" \
+            "recoverTodo[]" \
             "transferFile[]" \
-            "updateFeedback[]"             "add[]" \
+            "updateFeedback[]" \
+            "updateTodo[]"             "add[]" \
             "batchUpdateSort[]" \
             "edit1[]" \
             "list1[]" \
@@ -377,7 +390,7 @@ case $state in
             "getFunctionList[]" \
             "presignUrl[]"             "queryPointsLog[]"             "init[]" \
             "testAndroidPush[]" \
-            "testIosPush[]"             "generateShareLink[]" \
+            "testIosPush[]"             "redeem[]"             "generateShareLink[]" \
             "getSharedInfo[]"             "allocatePointsToTeam[]" \
             "assignRole[]" \
             "checkTeamAdminOrOwner[]" \
@@ -512,6 +525,12 @@ case $state in
                     )
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
+      grantDurationPackage)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
       grantMonthlyReward)
         local -a _op_arguments
         _op_arguments=(
@@ -544,7 +563,25 @@ case $state in
                               )
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
+      rechargeMembership)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
+      refreshMembershipQuota)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
       register)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
+      syncMembership)
         local -a _op_arguments
         _op_arguments=(
                               )
@@ -635,6 +672,12 @@ case $state in
                               )
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
+      createSyncUploadPlaceholder)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
       delete)
         local -a _op_arguments
         _op_arguments=(
@@ -670,6 +713,12 @@ case $state in
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
       getSupportLanguage)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
+      getSyncStsToken)
         local -a _op_arguments
         _op_arguments=(
                               )
@@ -724,6 +773,13 @@ case $state in
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
       notify)
+        local -a _op_arguments
+        _op_arguments=(
+                    "fileId=:[QUERY] "
+          )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
+      notifySyncUpload)
         local -a _op_arguments
         _op_arguments=(
                     "fileId=:[QUERY] "
@@ -809,11 +865,29 @@ case $state in
                               )
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
+      clearCompletedTodo)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
+      countTodoByDeadline)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
       deleteConclusion)
         local -a _op_arguments
         _op_arguments=(
           "conclusionId=:[PATH] "
                     )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
+      deleteTodo)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
       editConclusion)
@@ -926,6 +1000,12 @@ case $state in
                               )
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
+      listTodoByDeadlineRange)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
       listTranscriptionRecord)
         local -a _op_arguments
         _op_arguments=(
@@ -935,6 +1015,12 @@ case $state in
           )
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
+      recoverTodo)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
       transferFile)
         local -a _op_arguments
         _op_arguments=(
@@ -942,6 +1028,12 @@ case $state in
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
       updateFeedback)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
+      updateTodo)
         local -a _op_arguments
         _op_arguments=(
                               )
@@ -1029,6 +1121,12 @@ case $state in
         _describe -t actions 'operations' _op_arguments -S '' && ret=0
         ;;
       testIosPush)
+        local -a _op_arguments
+        _op_arguments=(
+                              )
+        _describe -t actions 'operations' _op_arguments -S '' && ret=0
+        ;;
+      redeem)
         local -a _op_arguments
         _op_arguments=(
                               )

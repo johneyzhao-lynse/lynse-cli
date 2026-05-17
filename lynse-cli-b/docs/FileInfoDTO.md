@@ -24,6 +24,8 @@ Name | Type | Description | Notes
 **transcriptionRecords** | [**array[FileTransRecordVO]**](FileTransRecordVO.md) |  | [optional] [default to null]
 **templateId** | **string** |  | [optional] [default to null]
 **model** | **string** |  | [optional] [default to null]
+**minuteConsumeTraceId** | **string** |  | [optional] [default to null]
+**legacyPointsConsumed** | **integer** |  | [optional] [default to null]
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

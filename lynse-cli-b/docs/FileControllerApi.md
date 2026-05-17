@@ -9,12 +9,14 @@ Method | HTTP request | Description
 [**cleanBin**](FileControllerApi.md#cleanBin) | **POST** /api/business/file/cleanBin | 
 [**cleanBinAll**](FileControllerApi.md#cleanBinAll) | **POST** /api/business/file/cleanBinAll | 
 [**countByCategory**](FileControllerApi.md#countByCategory) | **GET** /api/business/file/category/count | 
+[**createSyncUploadPlaceholder**](FileControllerApi.md#createSyncUploadPlaceholder) | **POST** /api/business/file/sync/pre/create | 
 [**delete**](FileControllerApi.md#delete) | **DELETE** /api/business/file/delete | 
 [**edit**](FileControllerApi.md#edit) | **PUT** /api/business/file/{fileId} | 
 [**getAvailableAIModelList**](FileControllerApi.md#getAvailableAIModelList) | **GET** /api/business/file/getAvailableAIModelList | 
 [**getEvaluationList**](FileControllerApi.md#getEvaluationList) | **GET** /api/business/file/getEvaluationList | 
 [**getStsToken**](FileControllerApi.md#getStsToken) | **POST** /api/business/file/getStsToken | 
 [**getSupportLanguage**](FileControllerApi.md#getSupportLanguage) | **GET** /api/business/file/getSupportLanguage | 
+[**getSyncStsToken**](FileControllerApi.md#getSyncStsToken) | **POST** /api/business/file/sync/pre/sts | 
 [**handleAudioMergeCallback**](FileControllerApi.md#handleAudioMergeCallback) | **POST** /api/business/file/audio/merge/callback | 
 [**info1**](FileControllerApi.md#info1) | **GET** /api/business/file/info | 
 [**list**](FileControllerApi.md#list) | **GET** /api/business/file/list | 
@@ -23,6 +25,7 @@ Method | HTTP request | Description
 [**listByTimeRange**](FileControllerApi.md#listByTimeRange) | **GET** /api/business/file/timeRange/list | 
 [**markFileAsRead**](FileControllerApi.md#markFileAsRead) | **GET** /api/business/file/markRead | 
 [**notify**](FileControllerApi.md#notify) | **GET** /api/business/file/upload/notify | 
+[**notifySyncUpload**](FileControllerApi.md#notifySyncUpload) | **GET** /api/business/file/sync/pre/notify | 
 [**page**](FileControllerApi.md#page) | **GET** /api/business/file/page | 
 [**pageByCategory**](FileControllerApi.md#pageByCategory) | **GET** /api/business/file/category/page | 
 [**presign4Download**](FileControllerApi.md#presign4Download) | **GET** /api/business/file/presign/download | 
@@ -192,6 +195,39 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: Not Applicable
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## createSyncUploadPlaceholder
+
+
+
+### Example
+
+```bash
+ createSyncUploadPlaceholder
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **syncPreUploadReq** | [**SyncPreUploadReq**](SyncPreUploadReq.md) |  |
+
+### Return type
+
+[**ResultBoolean**](ResultBoolean.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
 - **Accept**: */*
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -391,6 +427,39 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 
+## getSyncStsToken
+
+
+
+### Example
+
+```bash
+ getSyncStsToken
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **syncPreUploadReq** | [**SyncPreUploadReq**](SyncPreUploadReq.md) |  |
+
+### Return type
+
+[**ResultStsTokenVO**](ResultStsTokenVO.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
 ## handleAudioMergeCallback
 
 
@@ -443,7 +512,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ResultFileEntity**](ResultFileEntity.md)
+[**ResultFileInfoVO**](ResultFileInfoVO.md)
 
 ### Authorization
 
@@ -630,6 +699,39 @@ No authorization required
 
 ```bash
  notify  fileId=value
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **fileId** | **string** |  | [default to null]
+
+### Return type
+
+[**ResultBoolean**](ResultBoolean.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not Applicable
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## notifySyncUpload
+
+
+
+### Example
+
+```bash
+ notifySyncUpload  fileId=value
 ```
 
 ### Parameters

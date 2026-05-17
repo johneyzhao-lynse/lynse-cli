@@ -120,12 +120,16 @@ Class | Method | HTTP request | Description
 *CustomerControllerApi* | [**detail**](docs/CustomerControllerApi.md#detail) | **GET** /api/business/customer/detail | 
 *CustomerControllerApi* | [**edit2**](docs/CustomerControllerApi.md#edit2) | **PUT** /api/business/customer | 
 *CustomerControllerApi* | [**edit3**](docs/CustomerControllerApi.md#edit3) | **PUT** /api/business/customer/{customerId} | 
+*CustomerControllerApi* | [**grantDurationPackage**](docs/CustomerControllerApi.md#grantdurationpackage) | **POST** /api/business/customer/membership/package/grant | 
 *CustomerControllerApi* | [**grantMonthlyReward**](docs/CustomerControllerApi.md#grantmonthlyreward) | **GET** /api/business/customer/bonus | 
 *CustomerControllerApi* | [**grantTeamUpgrade**](docs/CustomerControllerApi.md#grantteamupgrade) | **GET** /api/business/customer/grantTeamUpgrade | 
 *CustomerControllerApi* | [**list2**](docs/CustomerControllerApi.md#list2) | **GET** /api/business/customer/list | 
 *CustomerControllerApi* | [**outPutLanguage**](docs/CustomerControllerApi.md#outputlanguage) | **PUT** /api/business/customer/outPutLanguage | 
 *CustomerControllerApi* | [**recharge1**](docs/CustomerControllerApi.md#recharge1) | **POST** /api/business/customer/recharge | 
+*CustomerControllerApi* | [**rechargeMembership**](docs/CustomerControllerApi.md#rechargemembership) | **POST** /api/business/customer/membership/recharge | 
+*CustomerControllerApi* | [**refreshMembershipQuota**](docs/CustomerControllerApi.md#refreshmembershipquota) | **GET** /api/business/customer/membership/refresh | 
 *CustomerControllerApi* | [**register**](docs/CustomerControllerApi.md#register) | **POST** /api/business/customer/register | 
+*CustomerControllerApi* | [**syncMembership**](docs/CustomerControllerApi.md#syncmembership) | **POST** /api/business/customer/membership/sync | 
 *CustomerControllerApi* | [**terminate**](docs/CustomerControllerApi.md#terminate) | **DELETE** /api/business/customer | 
 *CustomerControllerApi* | [**updatePwd**](docs/CustomerControllerApi.md#updatepwd) | **PUT** /api/business/customer/updatePwd | 
 *DeviceControllerApi* | [**bind**](docs/DeviceControllerApi.md#bind) | **POST** /api/business/device/bind | 
@@ -139,12 +143,14 @@ Class | Method | HTTP request | Description
 *FileControllerApi* | [**cleanBin**](docs/FileControllerApi.md#cleanbin) | **POST** /api/business/file/cleanBin | 
 *FileControllerApi* | [**cleanBinAll**](docs/FileControllerApi.md#cleanbinall) | **POST** /api/business/file/cleanBinAll | 
 *FileControllerApi* | [**countByCategory**](docs/FileControllerApi.md#countbycategory) | **GET** /api/business/file/category/count | 
+*FileControllerApi* | [**createSyncUploadPlaceholder**](docs/FileControllerApi.md#createsyncuploadplaceholder) | **POST** /api/business/file/sync/pre/create | 
 *FileControllerApi* | [**delete**](docs/FileControllerApi.md#delete) | **DELETE** /api/business/file/delete | 
 *FileControllerApi* | [**edit**](docs/FileControllerApi.md#edit) | **PUT** /api/business/file/{fileId} | 
 *FileControllerApi* | [**getAvailableAIModelList**](docs/FileControllerApi.md#getavailableaimodellist) | **GET** /api/business/file/getAvailableAIModelList | 
 *FileControllerApi* | [**getEvaluationList**](docs/FileControllerApi.md#getevaluationlist) | **GET** /api/business/file/getEvaluationList | 
 *FileControllerApi* | [**getStsToken**](docs/FileControllerApi.md#getststoken) | **POST** /api/business/file/getStsToken | 
 *FileControllerApi* | [**getSupportLanguage**](docs/FileControllerApi.md#getsupportlanguage) | **GET** /api/business/file/getSupportLanguage | 
+*FileControllerApi* | [**getSyncStsToken**](docs/FileControllerApi.md#getsyncststoken) | **POST** /api/business/file/sync/pre/sts | 
 *FileControllerApi* | [**handleAudioMergeCallback**](docs/FileControllerApi.md#handleaudiomergecallback) | **POST** /api/business/file/audio/merge/callback | 
 *FileControllerApi* | [**info1**](docs/FileControllerApi.md#info1) | **GET** /api/business/file/info | 
 *FileControllerApi* | [**list**](docs/FileControllerApi.md#list) | **GET** /api/business/file/list | 
@@ -153,6 +159,7 @@ Class | Method | HTTP request | Description
 *FileControllerApi* | [**listByTimeRange**](docs/FileControllerApi.md#listbytimerange) | **GET** /api/business/file/timeRange/list | 
 *FileControllerApi* | [**markFileAsRead**](docs/FileControllerApi.md#markfileasread) | **GET** /api/business/file/markRead | 
 *FileControllerApi* | [**notify**](docs/FileControllerApi.md#notify) | **GET** /api/business/file/upload/notify | 
+*FileControllerApi* | [**notifySyncUpload**](docs/FileControllerApi.md#notifysyncupload) | **GET** /api/business/file/sync/pre/notify | 
 *FileControllerApi* | [**page**](docs/FileControllerApi.md#page) | **GET** /api/business/file/page | 
 *FileControllerApi* | [**pageByCategory**](docs/FileControllerApi.md#pagebycategory) | **GET** /api/business/file/category/page | 
 *FileControllerApi* | [**presign4Download**](docs/FileControllerApi.md#presign4download) | **GET** /api/business/file/presign/download | 
@@ -165,7 +172,10 @@ Class | Method | HTTP request | Description
 *FileControllerApi* | [**testAudioMerge**](docs/FileControllerApi.md#testaudiomerge) | **POST** /api/business/file/audio/merge/test | 
 *FileOperationControllerApi* | [**aiModelProcessText**](docs/FileOperationControllerApi.md#aimodelprocesstext) | **POST** /api/business/file/ai | 
 *FileOperationControllerApi* | [**batchGetConclusions**](docs/FileOperationControllerApi.md#batchgetconclusions) | **POST** /api/business/file/conclusion/batch | 
+*FileOperationControllerApi* | [**clearCompletedTodo**](docs/FileOperationControllerApi.md#clearcompletedtodo) | **POST** /api/business/file/todo/clear | 
+*FileOperationControllerApi* | [**countTodoByDeadline**](docs/FileOperationControllerApi.md#counttodobydeadline) | **GET** /api/business/file/todo/count | 
 *FileOperationControllerApi* | [**deleteConclusion**](docs/FileOperationControllerApi.md#deleteconclusion) | **DELETE** /api/business/file/conclusion/{conclusionId} | 
+*FileOperationControllerApi* | [**deleteTodo**](docs/FileOperationControllerApi.md#deletetodo) | **POST** /api/business/file/todo/delete | 
 *FileOperationControllerApi* | [**editConclusion**](docs/FileOperationControllerApi.md#editconclusion) | **PUT** /api/business/file/conclusion/{conclusionId} | 
 *FileOperationControllerApi* | [**editMindMap**](docs/FileOperationControllerApi.md#editmindmap) | **PUT** /api/business/file/mindMap/{mindMapId} | 
 *FileOperationControllerApi* | [**editOutline**](docs/FileOperationControllerApi.md#editoutline) | **PUT** /api/business/file/outline/{outlineId} | 
@@ -181,9 +191,12 @@ Class | Method | HTTP request | Description
 *FileOperationControllerApi* | [**getOutline**](docs/FileOperationControllerApi.md#getoutline) | **GET** /api/business/file/outline/get | 
 *FileOperationControllerApi* | [**getTranscribeStatus**](docs/FileOperationControllerApi.md#gettranscribestatus) | **POST** /api/business/file/trans/status | 
 *FileOperationControllerApi* | [**handleTransCallback**](docs/FileOperationControllerApi.md#handletranscallback) | **POST** /api/business/file/trans/callback | 
+*FileOperationControllerApi* | [**listTodoByDeadlineRange**](docs/FileOperationControllerApi.md#listtodobydeadlinerange) | **POST** /api/business/file/todo/list | 
 *FileOperationControllerApi* | [**listTranscriptionRecord**](docs/FileOperationControllerApi.md#listtranscriptionrecord) | **GET** /api/business/file/trans/get | 
+*FileOperationControllerApi* | [**recoverTodo**](docs/FileOperationControllerApi.md#recovertodo) | **POST** /api/business/file/todo/recover | 
 *FileOperationControllerApi* | [**transferFile**](docs/FileOperationControllerApi.md#transferfile) | **POST** /api/business/file/trans | 
 *FileOperationControllerApi* | [**updateFeedback**](docs/FileOperationControllerApi.md#updatefeedback) | **PUT** /api/business/file/feedback | 
+*FileOperationControllerApi* | [**updateTodo**](docs/FileOperationControllerApi.md#updatetodo) | **POST** /api/business/file/todo/update | 
 *FolderControllerApi* | [**add**](docs/FolderControllerApi.md#add) | **POST** /api/business/file/folder/add | 
 *FolderControllerApi* | [**batchUpdateSort**](docs/FolderControllerApi.md#batchupdatesort) | **PUT** /api/business/file/folder/batch-update-sort | 
 *FolderControllerApi* | [**edit1**](docs/FolderControllerApi.md#edit1) | **PUT** /api/business/file/folder/{folderId} | 
@@ -197,6 +210,7 @@ Class | Method | HTTP request | Description
 *PushControllerApi* | [**init**](docs/PushControllerApi.md#init) | **POST** /api/business/push/init | 
 *PushControllerApi* | [**testAndroidPush**](docs/PushControllerApi.md#testandroidpush) | **POST** /api/business/push/android/test | 
 *PushControllerApi* | [**testIosPush**](docs/PushControllerApi.md#testiospush) | **POST** /api/business/push/ios/test | 
+*RedemptionControllerApi* | [**redeem**](docs/RedemptionControllerApi.md#redeem) | **POST** /api/business/redemption/redeem | 
 *ShareLinkControllerApi* | [**generateShareLink**](docs/ShareLinkControllerApi.md#generatesharelink) | **POST** /api/business/share | 
 *ShareLinkControllerApi* | [**getSharedInfo**](docs/ShareLinkControllerApi.md#getsharedinfo) | **GET** /api/business/share/{shareId} | 
 *TeamControllerApi* | [**allocatePointsToTeam**](docs/TeamControllerApi.md#allocatepointstoteam) | **POST** /api/business/team/points/allocate | 
@@ -248,8 +262,12 @@ Class | Method | HTTP request | Description
  - [BenefitInfoVO](docs/BenefitInfoVO.md)
  - [BonusVO](docs/BonusVO.md)
  - [ConclusionContentDto](docs/ConclusionContentDto.md)
+ - [CustomerDurationPackageGrantReq](docs/CustomerDurationPackageGrantReq.md)
  - [CustomerExtInfoVO](docs/CustomerExtInfoVO.md)
  - [CustomerInfoVO](docs/CustomerInfoVO.md)
+ - [CustomerMembershipQuotaVO](docs/CustomerMembershipQuotaVO.md)
+ - [CustomerMembershipRechargeReq](docs/CustomerMembershipRechargeReq.md)
+ - [CustomerMembershipSyncReq](docs/CustomerMembershipSyncReq.md)
  - [CustomerQueryReq](docs/CustomerQueryReq.md)
  - [CustomerRechargeReq](docs/CustomerRechargeReq.md)
  - [CustomerRegisterReq](docs/CustomerRegisterReq.md)
@@ -266,11 +284,9 @@ Class | Method | HTTP request | Description
  - [FileCategoryVO](docs/FileCategoryVO.md)
  - [FileConclusionUpdateReq](docs/FileConclusionUpdateReq.md)
  - [FileConclusionVO](docs/FileConclusionVO.md)
- - [FileEntity](docs/FileEntity.md)
  - [FileIdsReq](docs/FileIdsReq.md)
  - [FileInfoDTO](docs/FileInfoDTO.md)
  - [FileInfoVO](docs/FileInfoVO.md)
- - [FileInfoVOHashInfo](docs/FileInfoVOHashInfo.md)
  - [FileListQueryReq](docs/FileListQueryReq.md)
  - [FileMindMapUpdateReq](docs/FileMindMapUpdateReq.md)
  - [FileMindMapVO](docs/FileMindMapVO.md)
@@ -279,6 +295,10 @@ Class | Method | HTTP request | Description
  - [FileQueryReq](docs/FileQueryReq.md)
  - [FileShareInfoVO](docs/FileShareInfoVO.md)
  - [FileTimeRangeQueryReq](docs/FileTimeRangeQueryReq.md)
+ - [FileTodoBatchUpdateReq](docs/FileTodoBatchUpdateReq.md)
+ - [FileTodoCountVO](docs/FileTodoCountVO.md)
+ - [FileTodoDetailVO](docs/FileTodoDetailVO.md)
+ - [FileTodoIdsReq](docs/FileTodoIdsReq.md)
  - [FileTransRecordUpdateReq](docs/FileTransRecordUpdateReq.md)
  - [FileTransRecordVO](docs/FileTransRecordVO.md)
  - [FileUpdateReq](docs/FileUpdateReq.md)
@@ -307,6 +327,8 @@ Class | Method | HTTP request | Description
  - [PromptTemplateItemVO](docs/PromptTemplateItemVO.md)
  - [PromptTemplateSelectVO](docs/PromptTemplateSelectVO.md)
  - [PushInitReq](docs/PushInitReq.md)
+ - [RedemptionCodeRedeemReq](docs/RedemptionCodeRedeemReq.md)
+ - [RedemptionRedeemResultVO](docs/RedemptionRedeemResultVO.md)
  - [ResultAiTaskResultVO](docs/ResultAiTaskResultVO.md)
  - [ResultAiTranscribeVocabularyEnabledVO](docs/ResultAiTranscribeVocabularyEnabledVO.md)
  - [ResultAliyunAudioMergeTaskVO](docs/ResultAliyunAudioMergeTaskVO.md)
@@ -317,12 +339,14 @@ Class | Method | HTTP request | Description
  - [ResultBoolean](docs/ResultBoolean.md)
  - [ResultCustomerExtInfoVO](docs/ResultCustomerExtInfoVO.md)
  - [ResultCustomerInfoVO](docs/ResultCustomerInfoVO.md)
+ - [ResultCustomerMembershipQuotaVO](docs/ResultCustomerMembershipQuotaVO.md)
  - [ResultFileCategoryVO](docs/ResultFileCategoryVO.md)
  - [ResultFileConclusionVO](docs/ResultFileConclusionVO.md)
- - [ResultFileEntity](docs/ResultFileEntity.md)
+ - [ResultFileInfoVO](docs/ResultFileInfoVO.md)
  - [ResultFileMindMapVO](docs/ResultFileMindMapVO.md)
  - [ResultFileOutlineVO](docs/ResultFileOutlineVO.md)
  - [ResultFileShareInfoVO](docs/ResultFileShareInfoVO.md)
+ - [ResultFileTodoCountVO](docs/ResultFileTodoCountVO.md)
  - [ResultFolderEntity](docs/ResultFolderEntity.md)
  - [ResultGeneratePresignedUrlResult](docs/ResultGeneratePresignedUrlResult.md)
  - [ResultGenerateShareLinkVO](docs/ResultGenerateShareLinkVO.md)
@@ -357,6 +381,7 @@ Class | Method | HTTP request | Description
  - [ResultMapStringTranscribeStatus](docs/ResultMapStringTranscribeStatus.md)
  - [ResultOtaManagementVO](docs/ResultOtaManagementVO.md)
  - [ResultPreSignedUrlVO](docs/ResultPreSignedUrlVO.md)
+ - [ResultRedemptionRedeemResultVO](docs/ResultRedemptionRedeemResultVO.md)
  - [ResultString](docs/ResultString.md)
  - [ResultStsTokenVO](docs/ResultStsTokenVO.md)
  - [ResultSubmitTransResultVO](docs/ResultSubmitTransResultVO.md)
@@ -366,7 +391,9 @@ Class | Method | HTTP request | Description
  - [SpeakerNameUpdateReq](docs/SpeakerNameUpdateReq.md)
  - [StsTokenVO](docs/StsTokenVO.md)
  - [SubmitTransResultVO](docs/SubmitTransResultVO.md)
+ - [SyncPreUploadReq](docs/SyncPreUploadReq.md)
  - [TableDataInfoFileInfoVO](docs/TableDataInfoFileInfoVO.md)
+ - [TableDataInfoFileTodoDetailVO](docs/TableDataInfoFileTodoDetailVO.md)
  - [TableDataInfoPointsLog](docs/TableDataInfoPointsLog.md)
  - [TeamAddOrEditReq](docs/TeamAddOrEditReq.md)
  - [TeamFileAddReq](docs/TeamFileAddReq.md)
@@ -376,6 +403,7 @@ Class | Method | HTTP request | Description
  - [TeamMemberInfoVO](docs/TeamMemberInfoVO.md)
  - [TeamMemberInviteVO](docs/TeamMemberInviteVO.md)
  - [TeamRechargeReq](docs/TeamRechargeReq.md)
+ - [TodoUpdateItem](docs/TodoUpdateItem.md)
  - [TranscriptionLanguageVO](docs/TranscriptionLanguageVO.md)
  - [TranscriptionStatus](docs/TranscriptionStatus.md)
  - [TransferFileReq](docs/TransferFileReq.md)

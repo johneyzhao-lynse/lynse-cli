@@ -8,7 +8,7 @@
 # ! openapi-generator (https://openapi-generator.tech)
 # ! FROM OPENAPI SPECIFICATION IN JSON.
 # !
-# ! Generator version: 7.21.0
+# ! Generator version: 7.22.0
 # !
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -112,6 +112,8 @@ operation_parameters_minimum_occurrences["verifyWechatSignature:::signature"]=1
 operation_parameters_minimum_occurrences["verifyWechatSignature:::timestamp"]=1
 operation_parameters_minimum_occurrences["verifyWechatSignature:::nonce"]=1
 operation_parameters_minimum_occurrences["verifyWechatSignature:::echostr"]=1
+operation_parameters_minimum_occurrences["emailCode:::email"]=1
+operation_parameters_minimum_occurrences["emailCode:::actionType"]=1
 operation_parameters_minimum_occurrences["smsCode:::phone"]=1
 operation_parameters_minimum_occurrences["smsCode:::actionType"]=1
 
@@ -138,6 +140,8 @@ operation_parameters_maximum_occurrences["verifyWechatSignature:::signature"]=0
 operation_parameters_maximum_occurrences["verifyWechatSignature:::timestamp"]=0
 operation_parameters_maximum_occurrences["verifyWechatSignature:::nonce"]=0
 operation_parameters_maximum_occurrences["verifyWechatSignature:::echostr"]=0
+operation_parameters_maximum_occurrences["emailCode:::email"]=0
+operation_parameters_maximum_occurrences["emailCode:::actionType"]=0
 operation_parameters_maximum_occurrences["smsCode:::phone"]=0
 operation_parameters_maximum_occurrences["smsCode:::actionType"]=0
 
@@ -161,6 +165,8 @@ operation_parameters_collection_type["verifyWechatSignature:::signature"]=""
 operation_parameters_collection_type["verifyWechatSignature:::timestamp"]=""
 operation_parameters_collection_type["verifyWechatSignature:::nonce"]=""
 operation_parameters_collection_type["verifyWechatSignature:::echostr"]=""
+operation_parameters_collection_type["emailCode:::email"]=""
+operation_parameters_collection_type["emailCode:::actionType"]=""
 operation_parameters_collection_type["smsCode:::phone"]=""
 operation_parameters_collection_type["smsCode:::actionType"]=""
 
@@ -576,6 +582,7 @@ echo "  $ops" | column -t -s ';'
     echo ""
     echo -e "${BOLD}${WHITE}[messageController]${OFF}"
 read -r -d '' ops <<EOF
+  ${CYAN}emailCode${OFF};
   ${CYAN}smsCode${OFF};
 EOF
 echo "  $ops" | column -t -s ';'
@@ -875,6 +882,25 @@ print_getPoolStatus_help() {
     echo ""
     echo -e "${BOLD}${WHITE}getPoolStatus - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
     echo -e ""
+    echo ""
+    echo -e "${BOLD}${WHITE}Responses${OFF}"
+    code=200
+    echo -e "${result_color_table[${code:0:1}]}  200;OK${OFF}" | paste -sd' ' - | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+}
+##############################################################################
+#
+# Print help for emailCode operation
+#
+##############################################################################
+print_emailCode_help() {
+    echo ""
+    echo -e "${BOLD}${WHITE}emailCode - ${OFF}" | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e ""
+    echo -e "${BOLD}${WHITE}Parameters${OFF}"
+    echo -e "  * ${GREEN}email${OFF} ${BLUE}[string]${OFF} ${RED}(required)${OFF} ${CYAN}(default: null)${OFF} - ${YELLOW} Specify as: email=value${OFF}" \
+        | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e "  * ${GREEN}actionType${OFF} ${BLUE}[string]${OFF} ${RED}(required)${OFF} ${CYAN}(default: null)${OFF} - ${YELLOW} Specify as: actionType=value${OFF}" \
+        | paste -sd' ' - | fold -sw 80 | sed '2,$s/^/    /'
     echo ""
     echo -e "${BOLD}${WHITE}Responses${OFF}"
     code=200
@@ -1653,6 +1679,42 @@ call_getPoolStatus() {
 
 ##############################################################################
 #
+# Call emailCode operation
+#
+##############################################################################
+call_emailCode() {
+    # ignore error about 'path_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local path_parameter_names=()
+    # ignore error about 'query_parameter_names' being unused; passed by reference
+    # shellcheck disable=SC2034
+    local query_parameter_names=(email actionType)
+    local path
+
+    if ! path=$(build_request_path "/api/auth/captcha/email" path_parameter_names query_parameter_names); then
+        ERROR_MSG=$path
+        exit 1
+    fi
+    local method="GET"
+    local headers_curl
+    headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
+    if [[ "$print_curl" = true ]]; then
+        echo "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    else
+        eval "curl -d '' ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    fi
+}
+
+##############################################################################
+#
 # Call smsCode operation
 #
 ##############################################################################
@@ -1829,6 +1891,9 @@ case $key in
     getPoolStatus)
     operation="getPoolStatus"
     ;;
+    emailCode)
+    operation="emailCode"
+    ;;
     smsCode)
     operation="smsCode"
     ;;
@@ -1963,6 +2028,9 @@ case $operation in
     ;;
     getPoolStatus)
     call_getPoolStatus
+    ;;
+    emailCode)
+    call_emailCode
     ;;
     smsCode)
     call_smsCode

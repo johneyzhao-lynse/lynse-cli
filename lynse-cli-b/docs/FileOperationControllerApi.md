@@ -6,7 +6,10 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**aiModelProcessText**](FileOperationControllerApi.md#aiModelProcessText) | **POST** /api/business/file/ai | 
 [**batchGetConclusions**](FileOperationControllerApi.md#batchGetConclusions) | **POST** /api/business/file/conclusion/batch | 
+[**clearCompletedTodo**](FileOperationControllerApi.md#clearCompletedTodo) | **POST** /api/business/file/todo/clear | 
+[**countTodoByDeadline**](FileOperationControllerApi.md#countTodoByDeadline) | **GET** /api/business/file/todo/count | 
 [**deleteConclusion**](FileOperationControllerApi.md#deleteConclusion) | **DELETE** /api/business/file/conclusion/{conclusionId} | 
+[**deleteTodo**](FileOperationControllerApi.md#deleteTodo) | **POST** /api/business/file/todo/delete | 
 [**editConclusion**](FileOperationControllerApi.md#editConclusion) | **PUT** /api/business/file/conclusion/{conclusionId} | 
 [**editMindMap**](FileOperationControllerApi.md#editMindMap) | **PUT** /api/business/file/mindMap/{mindMapId} | 
 [**editOutline**](FileOperationControllerApi.md#editOutline) | **PUT** /api/business/file/outline/{outlineId} | 
@@ -22,9 +25,12 @@ Method | HTTP request | Description
 [**getOutline**](FileOperationControllerApi.md#getOutline) | **GET** /api/business/file/outline/get | 
 [**getTranscribeStatus**](FileOperationControllerApi.md#getTranscribeStatus) | **POST** /api/business/file/trans/status | 
 [**handleTransCallback**](FileOperationControllerApi.md#handleTransCallback) | **POST** /api/business/file/trans/callback | 
+[**listTodoByDeadlineRange**](FileOperationControllerApi.md#listTodoByDeadlineRange) | **POST** /api/business/file/todo/list | 
 [**listTranscriptionRecord**](FileOperationControllerApi.md#listTranscriptionRecord) | **GET** /api/business/file/trans/get | 
+[**recoverTodo**](FileOperationControllerApi.md#recoverTodo) | **POST** /api/business/file/todo/recover | 
 [**transferFile**](FileOperationControllerApi.md#transferFile) | **POST** /api/business/file/trans | 
 [**updateFeedback**](FileOperationControllerApi.md#updateFeedback) | **PUT** /api/business/file/feedback | 
+[**updateTodo**](FileOperationControllerApi.md#updateTodo) | **POST** /api/business/file/todo/update | 
 
 
 
@@ -94,6 +100,66 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 
+## clearCompletedTodo
+
+
+
+### Example
+
+```bash
+ clearCompletedTodo
+```
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**ResultBoolean**](ResultBoolean.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not Applicable
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## countTodoByDeadline
+
+
+
+### Example
+
+```bash
+ countTodoByDeadline
+```
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**ResultFileTodoCountVO**](ResultFileTodoCountVO.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not Applicable
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
 ## deleteConclusion
 
 
@@ -122,6 +188,39 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: Not Applicable
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## deleteTodo
+
+
+
+### Example
+
+```bash
+ deleteTodo
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **fileTodoIdsReq** | [**FileTodoIdsReq**](FileTodoIdsReq.md) |  |
+
+### Return type
+
+[**ResultBoolean**](ResultBoolean.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
 - **Accept**: */*
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -636,6 +735,39 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 
+## listTodoByDeadlineRange
+
+
+
+### Example
+
+```bash
+ listTodoByDeadlineRange
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **body** | **map** |  |
+
+### Return type
+
+[**TableDataInfoFileTodoDetailVO**](TableDataInfoFileTodoDetailVO.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
 ## listTranscriptionRecord
 
 
@@ -666,6 +798,39 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: Not Applicable
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## recoverTodo
+
+
+
+### Example
+
+```bash
+ recoverTodo
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **fileTodoIdsReq** | [**FileTodoIdsReq**](FileTodoIdsReq.md) |  |
+
+### Return type
+
+[**ResultBoolean**](ResultBoolean.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
 - **Accept**: */*
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -720,6 +885,39 @@ No authorization required
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **feedbackRequest** | [**FeedbackRequest**](FeedbackRequest.md) |  |
+
+### Return type
+
+[**ResultBoolean**](ResultBoolean.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## updateTodo
+
+
+
+### Example
+
+```bash
+ updateTodo
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **fileTodoBatchUpdateReq** | [**FileTodoBatchUpdateReq**](FileTodoBatchUpdateReq.md) |  |
 
 ### Return type
 

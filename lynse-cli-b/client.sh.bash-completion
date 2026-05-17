@@ -8,7 +8,7 @@
 # ! openapi-generator (https://openapi-generator.tech)
 # ! FROM OPENAPI SPECIFICATION IN JSON.
 # !
-# ! Generator version: 7.21.0
+# ! Generator version: 7.22.0
 # !
 # !
 # ! System wide installation:
@@ -86,12 +86,16 @@ _()
     operations["detail"]=1
     operations["edit2"]=1
     operations["edit3"]=1
+    operations["grantDurationPackage"]=1
     operations["grantMonthlyReward"]=1
     operations["grantTeamUpgrade"]=1
     operations["list2"]=1
     operations["outPutLanguage"]=1
     operations["recharge1"]=1
+    operations["rechargeMembership"]=1
+    operations["refreshMembershipQuota"]=1
     operations["register"]=1
+    operations["syncMembership"]=1
     operations["terminate"]=1
     operations["updatePwd"]=1
     operations["bind"]=1
@@ -105,12 +109,14 @@ _()
     operations["cleanBin"]=1
     operations["cleanBinAll"]=1
     operations["countByCategory"]=1
+    operations["createSyncUploadPlaceholder"]=1
     operations["delete"]=1
     operations["edit"]=1
     operations["getAvailableAIModelList"]=1
     operations["getEvaluationList"]=1
     operations["getStsToken"]=1
     operations["getSupportLanguage"]=1
+    operations["getSyncStsToken"]=1
     operations["handleAudioMergeCallback"]=1
     operations["info1"]=1
     operations["list"]=1
@@ -119,6 +125,7 @@ _()
     operations["listByTimeRange"]=1
     operations["markFileAsRead"]=1
     operations["notify"]=1
+    operations["notifySyncUpload"]=1
     operations["page"]=1
     operations["pageByCategory"]=1
     operations["presign4Download"]=1
@@ -131,7 +138,10 @@ _()
     operations["testAudioMerge"]=1
     operations["aiModelProcessText"]=1
     operations["batchGetConclusions"]=1
+    operations["clearCompletedTodo"]=1
+    operations["countTodoByDeadline"]=1
     operations["deleteConclusion"]=1
+    operations["deleteTodo"]=1
     operations["editConclusion"]=1
     operations["editMindMap"]=1
     operations["editOutline"]=1
@@ -147,9 +157,12 @@ _()
     operations["getOutline"]=1
     operations["getTranscribeStatus"]=1
     operations["handleTransCallback"]=1
+    operations["listTodoByDeadlineRange"]=1
     operations["listTranscriptionRecord"]=1
+    operations["recoverTodo"]=1
     operations["transferFile"]=1
     operations["updateFeedback"]=1
+    operations["updateTodo"]=1
     operations["add"]=1
     operations["batchUpdateSort"]=1
     operations["edit1"]=1
@@ -163,6 +176,7 @@ _()
     operations["init"]=1
     operations["testAndroidPush"]=1
     operations["testIosPush"]=1
+    operations["redeem"]=1
     operations["generateShareLink"]=1
     operations["getSharedInfo"]=1
     operations["allocatePointsToTeam"]=1
@@ -211,12 +225,16 @@ _()
     operation_parameters["detail"]="queryReq= "
     operation_parameters["edit2"]=""
     operation_parameters["edit3"]="customerId= "
+    operation_parameters["grantDurationPackage"]=""
     operation_parameters["grantMonthlyReward"]=""
     operation_parameters["grantTeamUpgrade"]=""
     operation_parameters["list2"]="queryReq= "
     operation_parameters["outPutLanguage"]="language= "
     operation_parameters["recharge1"]=""
+    operation_parameters["rechargeMembership"]=""
+    operation_parameters["refreshMembershipQuota"]=""
     operation_parameters["register"]=""
+    operation_parameters["syncMembership"]=""
     operation_parameters["terminate"]="customerId= "
     operation_parameters["updatePwd"]=""
     operation_parameters["bind"]=""
@@ -230,12 +248,14 @@ _()
     operation_parameters["cleanBin"]=""
     operation_parameters["cleanBinAll"]=""
     operation_parameters["countByCategory"]=""
+    operation_parameters["createSyncUploadPlaceholder"]=""
     operation_parameters["delete"]="fileIds= folderIds= "
     operation_parameters["edit"]="fileId= "
     operation_parameters["getAvailableAIModelList"]=""
     operation_parameters["getEvaluationList"]="optionType= "
     operation_parameters["getStsToken"]=""
     operation_parameters["getSupportLanguage"]=""
+    operation_parameters["getSyncStsToken"]=""
     operation_parameters["handleAudioMergeCallback"]=""
     operation_parameters["info1"]="queryReq= "
     operation_parameters["list"]="dto= "
@@ -244,6 +264,7 @@ _()
     operation_parameters["listByTimeRange"]="queryReq= "
     operation_parameters["markFileAsRead"]="fileId= "
     operation_parameters["notify"]="fileId= "
+    operation_parameters["notifySyncUpload"]="fileId= "
     operation_parameters["page"]="dto= pageQuery= "
     operation_parameters["pageByCategory"]="queryReq= pageQuery= "
     operation_parameters["presign4Download"]="queryReq= "
@@ -256,7 +277,10 @@ _()
     operation_parameters["testAudioMerge"]=""
     operation_parameters["aiModelProcessText"]=""
     operation_parameters["batchGetConclusions"]=""
+    operation_parameters["clearCompletedTodo"]=""
+    operation_parameters["countTodoByDeadline"]=""
     operation_parameters["deleteConclusion"]="conclusionId= "
+    operation_parameters["deleteTodo"]=""
     operation_parameters["editConclusion"]="conclusionId= "
     operation_parameters["editMindMap"]="mindMapId= "
     operation_parameters["editOutline"]="outlineId= "
@@ -272,9 +296,12 @@ _()
     operation_parameters["getOutline"]="fileId= teamId= taskId= "
     operation_parameters["getTranscribeStatus"]=""
     operation_parameters["handleTransCallback"]=""
+    operation_parameters["listTodoByDeadlineRange"]=""
     operation_parameters["listTranscriptionRecord"]="fileId= taskId= teamId= "
+    operation_parameters["recoverTodo"]=""
     operation_parameters["transferFile"]=""
     operation_parameters["updateFeedback"]=""
+    operation_parameters["updateTodo"]=""
     operation_parameters["add"]=""
     operation_parameters["batchUpdateSort"]=""
     operation_parameters["edit1"]="folderId= "
@@ -288,6 +315,7 @@ _()
     operation_parameters["init"]=""
     operation_parameters["testAndroidPush"]=""
     operation_parameters["testIosPush"]=""
+    operation_parameters["redeem"]=""
     operation_parameters["generateShareLink"]=""
     operation_parameters["getSharedInfo"]="shareId= "
     operation_parameters["allocatePointsToTeam"]="pointsAmount= teamId= "

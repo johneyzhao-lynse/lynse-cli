@@ -8,7 +8,7 @@
 # ! openapi-generator (https://openapi-generator.tech)
 # ! FROM OPENAPI SPECIFICATION IN JSON.
 # !
-# ! Generator version: 7.21.0
+# ! Generator version: 7.22.0
 # !
 # !
 # ! System wide installation:
@@ -84,6 +84,7 @@ _()
     operations["updatePwd"]=1
     operations["verifyWechatSignature"]=1
     operations["getPoolStatus"]=1
+    operations["emailCode"]=1
     operations["smsCode"]=1
 
     # An associative array of operations to their parameters
@@ -104,6 +105,7 @@ _()
     operation_parameters["updatePwd"]=""
     operation_parameters["verifyWechatSignature"]="signature= timestamp= nonce= echostr= "
     operation_parameters["getPoolStatus"]=""
+    operation_parameters["emailCode"]="email= actionType= "
     operation_parameters["smsCode"]="phone= actionType= "
 
     # An associative array of possible values for enum parameters

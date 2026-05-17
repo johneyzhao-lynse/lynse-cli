@@ -17,9 +17,17 @@ import sys
 import json
 import re
 import hashlib
+import warnings
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Set
+
+VERSION = "1.3.1"
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"urllib3 v2 only supports OpenSSL 1\.1\.1\+",
+)
 
 try:
     import requests
@@ -170,7 +178,9 @@ class LynseAPI:
                 )
 
             data = response.json()
-            access_token = data.get('data', {}).get('accessToken') or data.get('accessToken')
+            data_payload = data.get('data') if isinstance(data, dict) else None
+            data_payload = data_payload if isinstance(data_payload, dict) else {}
+            access_token = data_payload.get('accessToken') or data.get('accessToken')
 
             if not access_token or access_token == 'null':
                 raise LynseAPIError("API Key 认证失败：返回的 Token 为空")
@@ -200,8 +210,13 @@ class LynseAPI:
                     }
                     test_response = requests.get(test_url, headers=test_headers, timeout=10)
                     if test_response.status_code == 200:
-                        self._access_token = cached
-                        return cached
+                        try:
+                            test_data = test_response.json()
+                        except json.JSONDecodeError:
+                            test_data = {}
+                        if test_data.get('code') == 200:
+                            self._access_token = cached
+                            return cached
                 except Exception:
                     pass  # Token 无效，刷新
 
@@ -238,7 +253,9 @@ class LynseAPI:
             response = requests.get(url, headers=headers, timeout=10)
             if response.status_code == 200:
                 data = response.json()
-                current_id = data.get('data', {}).get('id') or data.get('id')
+                data_payload = data.get('data') if isinstance(data, dict) else None
+                data_payload = data_payload if isinstance(data_payload, dict) else {}
+                current_id = data_payload.get('id') or data.get('id')
                 if current_id and current_id != self.owner_id:
                     raise LynseAPIError("抱歉，这是私密账户，我无法操作")
         except LynseAPIError:
@@ -310,7 +327,7 @@ class LynseAPI:
             # 检查业务错误码
             code = data.get('code')
             if code and code != 200:
-                message = data.get('message', '未知错误')
+                message = data.get('message') or data.get('msg') or data.get('raw') or '未知错误'
                 raise LynseAPIError(f"API 错误：{message}", code=code)
 
             return data
@@ -338,7 +355,8 @@ class LynseAPI:
     def get_user_points(self) -> Dict[str, Any]:
         """获取用户积分"""
         data = self.get_current_customer()
-        points_data = data.get('data', {})
+        points_data = data.get('data') if isinstance(data, dict) else {}
+        points_data = points_data if isinstance(points_data, dict) else {}
         return {
             'pointsAmount': points_data.get('pointsAmount', 0),
             'usedPointsAmount': points_data.get('usedPointsAmount', 0)
@@ -347,7 +365,9 @@ class LynseAPI:
     def get_user_phone(self) -> str:
         """获取用户手机号"""
         data = self.get_current_customer()
-        phone = data.get('data', {}).get('phone', '')
+        phone_data = data.get('data') if isinstance(data, dict) else {}
+        phone_data = phone_data if isinstance(phone_data, dict) else {}
+        phone = phone_data.get('phone', '')
         # 脱敏处理
         if len(phone) >= 11:
             return f"{phone[:3]}****{phone[7:]}"
@@ -358,27 +378,261 @@ class LynseAPI:
         """获取文件列表"""
         return self._request('GET', '/api/business/file/list')
 
+    def page_files(self, page: int = 1, page_size: int = 100) -> Dict[str, Any]:
+        """分页获取文件列表"""
+        safe_page = self._sanitize_param(str(page), 'digit') or '1'
+        safe_page_size = self._sanitize_param(str(page_size), 'digit') or '100'
+        return self._request(
+            'GET',
+            '/api/business/file/page',
+            params={'pageNum': safe_page, 'pageSize': safe_page_size},
+        )
+
+    def list_files_paged(self, page_size: int = 100) -> Dict[str, Any]:
+        """分页拉取全部文件，避免默认列表接口返回数量被截断。"""
+        page_size = max(1, min(int(page_size or 100), 500))
+        page = 1
+        all_items: List[Dict[str, Any]] = []
+        seen_ids = set()
+        total = None
+
+        while True:
+            response = self.page_files(page, page_size)
+            payload = response.get('data')
+            items = payload if isinstance(payload, list) else []
+            if isinstance(payload, dict):
+                for key in ('records', 'list', 'rows', 'items'):
+                    value = payload.get(key)
+                    if isinstance(value, list):
+                        items = value
+                        break
+
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                item_id = str(item.get('id') or '')
+                if item_id and item_id in seen_ids:
+                    continue
+                if item_id:
+                    seen_ids.add(item_id)
+                all_items.append(item)
+
+            raw_total = response.get('total')
+            if raw_total is None and isinstance(payload, dict):
+                raw_total = payload.get('total')
+            try:
+                total = int(raw_total) if raw_total is not None else total
+            except (TypeError, ValueError):
+                total = None
+
+            if not items:
+                break
+            if total is not None and len(all_items) >= total:
+                break
+            if len(items) < page_size:
+                break
+            page += 1
+
+        return {
+            'code': 200,
+            'msg': 'SUCCESS',
+            'total': total if total is not None else len(all_items),
+            'data': all_items,
+        }
+
+    def search_files(self, keyword: str, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
+        """按标题关键词搜索文件。"""
+        safe_keyword = self._sanitize_param(keyword, 'safe').strip()
+        if not safe_keyword:
+            return {'code': 200, 'msg': 'SUCCESS', 'total': 0, 'data': []}
+        safe_page = self._sanitize_param(str(page), 'digit') or '1'
+        safe_page_size = self._sanitize_param(str(page_size), 'digit') or '20'
+        return self._request(
+            'GET',
+            '/api/business/file/page',
+            params={
+                'originalFilename': safe_keyword,
+                'pageNum': int(safe_page),
+                'pageSize': int(safe_page_size),
+            },
+        )
+
     def get_file_info(self, file_id: str) -> Dict[str, Any]:
         """获取文件详情"""
-        safe_id = self._sanitize_param(file_id, 'digit')
+        safe_id = self._sanitize_param(file_id, 'safe')
         return self._request('GET', '/api/business/file/info',
                             params={'fileId': safe_id})
 
     def get_conclusion(self, file_id: str) -> Dict[str, Any]:
         """获取文件总结"""
-        safe_id = self._sanitize_param(file_id, 'digit')
+        safe_id = self._sanitize_param(file_id, 'safe')
         return self._request('GET', '/api/business/file/conclusion/list',
                             params={'fileId': safe_id})
 
+    def list_todos(self, page_size: int = 100, is_completed: Optional[int] = None) -> Dict[str, Any]:
+        """分页获取文件待办列表。"""
+        page_size = max(1, min(int(page_size or 100), 500))
+        page = 1
+        all_items: List[Dict[str, Any]] = []
+        seen_ids = set()
+        total = None
+
+        while True:
+            body: Dict[str, Any] = {'pageNum': page, 'pageSize': page_size}
+            if is_completed is not None:
+                body['isCompleted'] = 1 if int(is_completed) else 0
+            response = self._request('POST', '/api/business/file/todo/list', json_data=body)
+            payload = response.get('data')
+            items = payload if isinstance(payload, list) else []
+            if isinstance(payload, dict):
+                for key in ('records', 'list', 'rows', 'items'):
+                    value = payload.get(key)
+                    if isinstance(value, list):
+                        items = value
+                        break
+
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                todo_id = str(item.get('id') or '')
+                if todo_id and todo_id in seen_ids:
+                    continue
+                if todo_id:
+                    seen_ids.add(todo_id)
+                all_items.append(item)
+
+            raw_total = response.get('total')
+            if raw_total is None and isinstance(payload, dict):
+                raw_total = payload.get('total')
+            try:
+                total = int(raw_total) if raw_total is not None else total
+            except (TypeError, ValueError):
+                total = None
+
+            if not items:
+                break
+            if total is not None and len(all_items) >= total:
+                break
+            if len(items) < page_size:
+                break
+            page += 1
+
+        return {
+            'code': 200,
+            'msg': 'SUCCESS',
+            'total': total if total is not None else len(all_items),
+            'data': all_items,
+        }
+
+    def count_todos(self) -> Dict[str, Any]:
+        """按截止时间统计灵光记已有待办。"""
+        return self._request('GET', '/api/business/file/todo/count')
+
+    @staticmethod
+    def _todo_status_filter(status: str) -> Optional[int]:
+        normalized = str(status or 'all').strip().lower()
+        if normalized in ('open', 'todo', 'pending', 'unfinished', '0', '未完成', '待办'):
+            return 0
+        if normalized in ('done', 'completed', 'finished', '1', '已完成', '完成'):
+            return 1
+        return None
+
+    @staticmethod
+    def _parse_todo_datetime(value: Any) -> Optional[datetime]:
+        if value in (None, ''):
+            return None
+        text = str(value).strip()
+        if not text:
+            return None
+        text = text.replace('Z', '+00:00')
+        for parser in (
+            lambda item: datetime.fromisoformat(item),
+            lambda item: datetime.strptime(item, '%Y-%m-%d %H:%M:%S'),
+            lambda item: datetime.strptime(item, '%Y-%m-%d'),
+        ):
+            try:
+                parsed = parser(text)
+                if parsed.tzinfo is not None:
+                    parsed = parsed.replace(tzinfo=None)
+                return parsed
+            except ValueError:
+                continue
+        return None
+
+    @staticmethod
+    def _agent_todo_item(item: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            'todoContent': item.get('todoContent') or '',
+            'owner': item.get('owner') or '',
+            'expectedCompleteTime': item.get('expectedCompleteTime') or '',
+            'fileId': item.get('fileId') or '',
+            'isCompleted': item.get('isCompleted'),
+        }
+
+    def organize_todos(
+        self,
+        status: str = 'all',
+        page_size: int = 100,
+        now: Any = None,
+    ) -> Dict[str, Any]:
+        """读取灵光记已有待办，并按截止时间整理成 agent 友好的分组 JSON。"""
+        base_time = self._parse_todo_datetime(now) if now is not None else datetime.now()
+        if base_time is None:
+            base_time = datetime.now()
+
+        todos_response = self.list_todos(
+            page_size=page_size,
+            is_completed=self._todo_status_filter(status),
+        )
+        items = todos_response.get('data') if isinstance(todos_response, dict) else []
+        items = items if isinstance(items, list) else []
+
+        groups: Dict[str, List[Dict[str, Any]]] = {
+            'expired': [],
+            'nearWeek': [],
+            'nearMonth': [],
+            'future': [],
+            'noDate': [],
+        }
+        seven_days = base_time + timedelta(days=7)
+        thirty_days = base_time + timedelta(days=30)
+
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            agent_item = self._agent_todo_item(item)
+            deadline = self._parse_todo_datetime(agent_item.get('expectedCompleteTime'))
+            if deadline is None:
+                bucket = 'noDate'
+            elif deadline < base_time:
+                bucket = 'expired'
+            elif deadline <= seven_days:
+                bucket = 'nearWeek'
+            elif deadline <= thirty_days:
+                bucket = 'nearMonth'
+            else:
+                bucket = 'future'
+            groups[bucket].append(agent_item)
+
+        summary = {name: len(values) for name, values in groups.items()}
+        return {
+            'code': 200,
+            'msg': 'SUCCESS',
+            'status': status or 'all',
+            'total': sum(summary.values()),
+            'summary': summary,
+            'groups': groups,
+        }
+
     def get_outline(self, file_id: str) -> Dict[str, Any]:
         """获取文件大纲"""
-        safe_id = self._sanitize_param(file_id, 'digit')
+        safe_id = self._sanitize_param(file_id, 'safe')
         return self._request('GET', '/api/business/file/outline/get',
                             params={'fileId': safe_id})
 
     def export_outline(self, file_id: str) -> Dict[str, Any]:
         """导出大纲"""
-        safe_id = self._sanitize_param(file_id, 'digit')
+        safe_id = self._sanitize_param(file_id, 'safe')
         return self._request('GET', '/api/business/file/outline/export',
                             params={'fileId': safe_id})
 
@@ -393,11 +647,107 @@ class LynseAPI:
         }
         return self._request('GET', '/api/business/file/timeRange/list', params=params)
 
+    def list_folders(self) -> Dict[str, Any]:
+        """获取文件夹/分组列表"""
+        return self._request('GET', '/api/business/file/folder/list')
+
+    def create_folder(self, folder_data: Dict[str, Any]) -> Dict[str, Any]:
+        """创建文件夹/分组"""
+        return self._request('POST', '/api/business/file/folder/add', json_data=folder_data)
+
+    def change_folder(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """移动文件到文件夹/分组"""
+        params = {
+            'oldFolderId': payload.get('oldFolderId') or '',
+            'newFolderId': payload.get('newFolderId') or '',
+            'fileIds': payload.get('fileIds') or [],
+        }
+        return self._request('GET', '/api/business/file/changeFolder', params=params)
+
+    @staticmethod
+    def _normalize_speaker_name(value: str) -> str:
+        return re.sub(r'\s+', '', str(value or '').strip())
+
+    @classmethod
+    def _speaker_name_aliases(cls, value: str) -> Set[str]:
+        normalized = cls._normalize_speaker_name(value)
+        aliases = {str(value or '').strip(), normalized}
+        speaker_match = re.fullmatch(r'发言人(\d+)', normalized)
+        if speaker_match:
+            aliases.add(speaker_match.group(1))
+        elif re.fullmatch(r'\d+', normalized):
+            aliases.add(f'发言人{normalized}')
+        return {item for item in aliases if item}
+
     def get_transcription_record(self, file_id: str) -> Dict[str, Any]:
         """获取转写记录"""
-        safe_id = self._sanitize_param(file_id, 'digit')
+        safe_id = self._sanitize_param(file_id, 'safe')
         return self._request('GET', '/api/business/file/trans/get',
                             params={'fileId': safe_id})
+
+    def list_transcription_record(self, task_id: str, *, team_id: str = '', file_id: str = '') -> Dict[str, Any]:
+        """按 taskId 拉取转写记录。"""
+        params = {
+            'taskId': self._sanitize_param(task_id, 'safe'),
+            'teamId': self._sanitize_param(team_id, 'safe'),
+        }
+        safe_file_id = self._sanitize_param(file_id, 'safe')
+        if safe_file_id:
+            params['fileId'] = safe_file_id
+        return self._request('GET', '/api/business/file/trans/get', params=params)
+
+    def edit_speaker_info(self, speaker_data: Dict[str, Any]) -> Dict[str, Any]:
+        """批量更新发言人名称"""
+        return self._request('PUT', '/api/business/file/trans/speaker', json_data=speaker_data)
+
+    def rename_speaker(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """解析会议与 speaker 信息后，统一执行发言人改名。"""
+        meeting_id = str(payload.get('meetingId') or payload.get('fileId') or '').strip()
+        old_name = str(payload.get('oldName') or '').strip()
+        new_name = str(payload.get('newName') or '').strip()
+        task_id = str(payload.get('taskId') or '').strip()
+        team_id = str(payload.get('teamId') or '').strip()
+        if not meeting_id:
+            raise LynseAPIError('缺少 meetingId/fileId，无法执行发言人改名')
+        if not old_name or not new_name:
+            raise LynseAPIError('缺少 oldName/newName，无法执行发言人改名')
+
+        files_response = self.list_files_paged(page_size=100)
+        file_items = files_response.get('data') if isinstance(files_response.get('data'), list) else []
+        file_record = None
+        for item in file_items:
+            if isinstance(item, dict) and str(item.get('id') or '').strip() == meeting_id:
+                file_record = item
+                break
+        if file_record is None:
+            file_info = self.get_file_info(meeting_id)
+            maybe_record = file_info.get('data')
+            if isinstance(maybe_record, dict):
+                file_record = maybe_record
+        if not isinstance(file_record, dict):
+            raise LynseAPIError(f'未找到会议：{meeting_id}')
+
+        file_id = str(file_record.get('id') or meeting_id).strip()
+        resolved_task_id = task_id or str(file_record.get('transcribeTaskId') or '').strip()
+        if not resolved_task_id:
+            raise LynseAPIError(f'会议 {meeting_id} 缺少 transcribeTaskId，无法修改发言人')
+
+        transcription = self.list_transcription_record(resolved_task_id, team_id=team_id, file_id=file_id)
+        entries = transcription.get('data') if isinstance(transcription.get('data'), list) else []
+        target_aliases = self._speaker_name_aliases(old_name)
+        speaker_info_list = []
+        for item in entries:
+            if not isinstance(item, dict):
+                continue
+            speaker_id = str(item.get('speakerId') or '').strip()
+            speaker_name = str(item.get('speakerName') or '').strip()
+            if not speaker_id or not speaker_name:
+                continue
+            if self._speaker_name_aliases(speaker_name) & target_aliases:
+                speaker_info_list.append({'speakerId': speaker_id, 'speakerName': new_name})
+        if not speaker_info_list:
+            raise LynseAPIError(f'未找到发言人：{old_name}')
+        return self.edit_speaker_info({'taskId': resolved_task_id, 'speakerInfoList': speaker_info_list})
 
     # AI 模型管理
     def get_ai_models(self) -> Dict[str, Any]:
@@ -502,15 +852,24 @@ class LynseAPI:
 def main():
     """CLI 入口函数"""
     if len(sys.argv) < 2:
-        print("Lynse CLI v1.3.0 - 跨平台 Python 版")
-        print("用法：python lynse.py <command> [参数...]")
+        print(f"Lynse CLI v{VERSION} - 灵光记跨平台 Python 版")
+        print("用法：python / python3 / py -3 lynse.py <command> [参数...]")
         print("\n常用命令:")
         print("  getCurrentCustomer          - 当前用户信息")
         print("  getUserPoints               - 当前用户积分")
         print("  getUserPhone                - 当前用户手机号")
         print("  listFiles                   - 文件列表")
+        print("  listFilesPaged [pageSize]   - 分页获取全部文件")
+        print("  listTodos [pageSize] [all|open|done] - 文件待办列表")
+        print("  countTodos                  - 按截止时间统计待办")
+        print("  organizeTodos [all|open|done] - 按截止时间整理待办")
         print("  getFileInfo <id>            - 文件详情")
         print("  getConclusion <id>          - 文件总结")
+        print("  listFolders                 - 文件夹/分组列表")
+        print("  createFolder <json>         - 创建文件夹/分组")
+        print("  changeFolder <json>         - 移动文件到文件夹/分组")
+        print("  renameSpeaker <json>        - 按会议解析并更新发言人名称")
+        print("  editSpeakerInfo <json>      - 直接提交发言人名称更新")
         print("  getAiModels                 - AI 模型列表")
         print("  getDevicePage [页码]        - 设备列表")
         sys.exit(1)
@@ -535,6 +894,26 @@ def main():
             result = {'phone': api.get_user_phone()}
         elif command == 'listFiles':
             result = api.list_files()
+        elif command == 'listFilesPaged':
+            page_size = int(args[0]) if args else 100
+            result = api.list_files_paged(page_size)
+        elif command == 'searchFiles':
+            if len(args) < 1:
+                print("错误：searchFiles 需要关键词参数", file=sys.stderr)
+                sys.exit(1)
+            page = int(args[1]) if len(args) > 1 else 1
+            page_size = int(args[2]) if len(args) > 2 else 20
+            result = api.search_files(args[0], page=page, page_size=page_size)
+        elif command == 'listTodos':
+            page_size = int(args[0]) if args else 100
+            status = args[1].lower() if len(args) > 1 else 'all'
+            result = api.list_todos(page_size=page_size, is_completed=api._todo_status_filter(status))
+        elif command == 'countTodos':
+            result = api.count_todos()
+        elif command == 'organizeTodos':
+            status = args[0].lower() if args else 'all'
+            page_size = int(args[1]) if len(args) > 1 else 100
+            result = api.organize_todos(status=status, page_size=page_size)
         elif command == 'getFileInfo':
             if len(args) < 1:
                 print("错误：getFileInfo 需要文件 ID 参数", file=sys.stderr)
@@ -558,11 +937,33 @@ def main():
         elif command == 'listFilesByTimeRange':
             days = int(args[0]) if args else 7
             result = api.list_files_by_time_range(days)
+        elif command == 'listFolders':
+            result = api.list_folders()
+        elif command == 'createFolder':
+            if len(args) < 1:
+                print("错误：createFolder 需要 JSON 数据参数", file=sys.stderr)
+                sys.exit(1)
+            result = api.create_folder(json.loads(args[0]))
+        elif command == 'changeFolder':
+            if len(args) < 1:
+                print("错误：changeFolder 需要 JSON 数据参数", file=sys.stderr)
+                sys.exit(1)
+            result = api.change_folder(json.loads(args[0]))
         elif command == 'getTranscriptionRecord':
             if len(args) < 1:
                 print("错误：getTranscriptionRecord 需要文件 ID 参数", file=sys.stderr)
                 sys.exit(1)
             result = api.get_transcription_record(args[0])
+        elif command == 'renameSpeaker':
+            if len(args) < 1:
+                print("错误：renameSpeaker 需要 JSON 数据参数", file=sys.stderr)
+                sys.exit(1)
+            result = api.rename_speaker(json.loads(args[0]))
+        elif command == 'editSpeakerInfo':
+            if len(args) < 1:
+                print("错误：editSpeakerInfo 需要 JSON 数据参数", file=sys.stderr)
+                sys.exit(1)
+            result = api.edit_speaker_info(json.loads(args[0]))
         elif command == 'getAiModels':
             result = api.get_ai_models()
         elif command == 'getDevicePage':
@@ -590,8 +991,8 @@ def main():
             print(f"错误：不支持的命令 '{command}'", file=sys.stderr)
             print("\n支持的命令:")
             print("  getCurrentCustomer, getUserInfo, getUserPoints, getUserPhone,")
-            print("  listFiles, getFileInfo, getConclusion, getOutline, exportOutline,")
-            print("  getAiModels, getDevicePage, getDeviceInfo, getCurrentUser,")
+            print("  listFiles, listFilesPaged, listTodos, countTodos, organizeTodos, getFileInfo, getConclusion, getOutline, exportOutline,")
+            print("  getTranscriptionRecord, renameSpeaker, editSpeakerInfo, getAiModels, getDevicePage, getDeviceInfo, getCurrentUser,")
             print("  getRoleList, getMenuTree, login, logout")
             sys.exit(1)
 

@@ -16,5 +16,8 @@ REM ============================================================================
 REM 获取脚本所在目录
 set "SCRIPT_DIR=%~dp0"
 
-REM 使用 Python 运行 lynse.py
+REM 使用可用的 Python 3 启动器运行 lynse.py
 python "%SCRIPT_DIR%lynse.py" %*
+if %ERRORLEVEL% EQU 9009 (
+  py -3 "%SCRIPT_DIR%lynse.py" %*
+)
