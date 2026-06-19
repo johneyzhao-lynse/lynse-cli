@@ -33,6 +33,11 @@
 | **翻译服务** | `getLatestSpeakerNames`, `getPromptTemplateCategories`, `getRegenerateSelectList`, `getTranscriptionLanguageList`, `getTranslateHistory`, `getTranslateResult` |
 | **其他功能** | `add`, `batchUpdateSort`, `edit1`, `list1`, `selectOne`, `checkApkUpdate`, `checkVersion`, `getFunctionList`, `presignUrl`, `queryPointsLog`, `generateShareLink`, `getSharedInfo`, `allocatePointsToTeam`, `assignRole`, `checkTeamAdminOrOwner` |
 
+### Python 包装命令补充
+
+- `getMyDevices`：调用 `GET /api/business/device/mine`，用于查询当前用户绑定设备和正确 SN。
+- `refreshMembership`：调用 `GET /api/business/customer/membership/refresh`，用于查询当前会员等级与额度。
+
 ## 🚀 迁移建议
 
 1. **逐步迁移策略**

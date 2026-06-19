@@ -6,3 +6,7 @@ __pycache__/
 autoresearch-lynse-cli/
 .DS_Store
 .npmrc
+.openapi-generator/
+*.log
+node_modules/
+.qoder/

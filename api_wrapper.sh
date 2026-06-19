@@ -170,6 +170,9 @@ case $ACTION in
         SAFE_PAGE=$(echo "$1" | tr -cd '0-9')
         curl -s -X GET "$API_HOST/api/business/deviceMgt/page9" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "pageNum:$SAFE_PAGE" -H "pageSize:10"
         ;;
+    "getMyDevices")
+        curl -s -X GET "$API_HOST/api/business/device/mine" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
+        ;;
     "getAiModels")
         curl -s -X GET "$API_HOST/api/business/ai/getAllAIModelList" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
@@ -185,6 +188,9 @@ case $ACTION in
     "getUserPhone")
         RESPONSE=$(curl -s -X GET "$API_HOST/api/business/customer/current" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY")
         echo "$RESPONSE" | grep -o '"phone":"[0-9*]*"' | cut -d: -f2 | tr -d '"'
+        ;;
+    "refreshMembership")
+        curl -s -X GET "$API_HOST/api/business/customer/membership/refresh" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
 
     # 文件管理接口

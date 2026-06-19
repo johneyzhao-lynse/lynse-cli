@@ -12,6 +12,7 @@ Lynse CLI - 核心 API 封装模块
     python lynse.py getFileInfo 12345
 """
 
+import base64
 import os
 import sys
 import json
@@ -19,21 +20,451 @@ import re
 import hashlib
 import warnings
 from pathlib import Path
+import platform
+import time
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List, Set
-
-VERSION = "1.3.1"
+from typing import Optional, Dict, Any, List, Union
 
 warnings.filterwarnings(
     "ignore",
     message=r"urllib3 v2 only supports OpenSSL 1\.1\.1\+",
 )
+warnings.filterwarnings(
+    "ignore",
+    message=r"urllib3 .* doesn't match a supported version",
+)
 
 try:
     import requests
 except ImportError:
+    class _MissingRequests:
+        """Sentinel stub when requests is not installed. Allows tests to patch methods onto it."""
+        class RequestException(Exception):
+            pass
+        # HTTP method stubs — raise ImportError if called without being patched by tests
+        def get(*args, **kwargs):
+            raise ImportError("requests library is not installed")
+        def post(*args, **kwargs):
+            raise ImportError("requests library is not installed")
+        def request(*args, **kwargs):
+            raise ImportError("requests library is not installed")
+    requests = _MissingRequests()
     print("错误：缺少 requests 库，请运行 'pip install requests' 安装", file=sys.stderr)
-    sys.exit(1)
+
+
+def _lynse_log_ts() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+# CLI 版本
+CLI_VERSION = '1.4.0'
+
+# 语义化退出码
+EXIT_SUCCESS = 0
+EXIT_INVALID = 1       # 参数错误或未知异常
+EXIT_AUTH = 2          # 鉴权失败 / Token 失效
+EXIT_NETWORK = 3       # 网络连接错误
+EXIT_TIMEOUT = 4       # 请求超时
+EXIT_PERMISSION = 5    # 权限不足
+EXIT_SERVER = 6        # 服务端业务错误
+
+
+def _resolve_exit_code(error: 'LynseAPIError') -> int:
+    """将 LynseAPIError 映射为语义化退出码。"""
+    http = error.http_code
+    code = error.code
+    msg = (error.message or '').lower()
+    if http in (401,) or code in (401, 2000) or 'token' in msg and ('过期' in msg or 'invalid' in msg or 'expired' in msg):
+        return EXIT_AUTH
+    if http in (403,) or code in (403,) or '权限不足' in msg:
+        return EXIT_PERMISSION
+    if http is not None and 500 <= http < 600:
+        return EXIT_SERVER
+    if 'timeout' in msg or '超时' in msg:
+        return EXIT_TIMEOUT
+    if '网络' in msg or 'network' in msg or 'connect' in msg or 'dns' in msg:
+        return EXIT_NETWORK
+    if http is not None and http != 200:
+        return EXIT_SERVER
+    if code is not None and code != 200:
+        return EXIT_SERVER
+    return EXIT_INVALID
+
+
+# 友好命令别名
+_SIMPLE_ALIASES = {
+    'me': 'getCurrentCustomer',
+    'whoami': 'getCurrentCustomer',
+    'profile': 'getCurrentCustomer',
+    'version': '__version__',
+    'doctor': '__doctor__',
+    'update': '__update__',
+}
+
+_SUBCOMMAND_ALIASES = {
+    'meetings': {
+        'list': 'listFilesByTimeRange',
+        'search': 'searchFiles',
+        'transcript': 'getTranscriptionRecord',
+        'summary': 'getConclusion',
+        'info': 'getFileInfo',
+        'outline': 'getOutline',
+    },
+    'folders': {
+        'list': 'listFolders',
+        'move': 'changeFolder',
+        'create': 'createFolder',
+    },
+    'todos': {
+        'list': 'listTodos',
+        'clear': 'clearCompletedTodos',
+        'delete': 'deleteTodos',
+    },
+    'devices': {
+        'list': 'getMyDevices',
+        'info': 'getDeviceInfo',
+        'unbind': 'unbindDevice',
+    },
+    'models': {
+        'list': 'getAiModels',
+        'add': 'addModel',
+        'delete': 'deleteModel',
+        'edit': 'editModel',
+        'enable': 'enableModel',
+    },
+    'auth': {
+        'login': '__auth_login__',
+        'status': '__auth_status__',
+        'logout': '__auth_logout__',
+        'doctor': '__auth_doctor__',
+    },
+}
+
+_ALIAS_HANDLERS = {
+    'listFilesByTimeRange': lambda api, a: api.list_files_by_time_range(_extract_days(a)),
+    'searchFiles': lambda api, a: api.search_files(a[0], **_extract_page_kwargs(a[1:])) if a else _missing_arg('search keyword'),
+    'getTranscriptionRecord': lambda api, a: api.get_transcription_record(a[0]) if a else _missing_arg('file ID'),
+    'getConclusion': lambda api, a: api.get_conclusion(a[0]) if a else _missing_arg('file ID'),
+    'getFileInfo': lambda api, a: api.get_file_info(a[0]) if a else _missing_arg('file ID'),
+    'getOutline': lambda api, a: api.get_outline(a[0]) if a else _missing_arg('file ID'),
+    'listFolders': lambda api, a: api.list_folders(),
+    'changeFolder': lambda api, a: api.change_folder(json.loads(a[0])) if a else _missing_arg('JSON payload'),
+    'createFolder': lambda api, a: api.create_folder(json.loads(a[0])) if a else _missing_arg('JSON data'),
+    'listTodos': lambda api, a: api.list_todos(status=(a[0] if a else 'all'), page_num=int(a[1]) if len(a) > 1 else 1, page_size=int(a[2]) if len(a) > 2 else 20),
+    'clearCompletedTodos': lambda api, a: api.clear_completed_todos(),
+    'deleteTodos': lambda api, a: _handle_delete_todos(api, a),
+    'getMyDevices': lambda api, a: api.get_my_devices(),
+    'getDeviceInfo': lambda api, a: api.get_device_info(a[0]) if a else _missing_arg('device ID'),
+    'unbindDevice': lambda api, a: api.unbind_device(a[0]) if a else _missing_arg('device ID'),
+    'getAiModels': lambda api, a: api.get_ai_models(),
+    'addModel': lambda api, a: api.add_model(json.loads(a[0])) if a else _missing_arg('JSON data'),
+    'deleteModel': lambda api, a: api.delete_model(a[0]) if a else _missing_arg('model ID'),
+    'editModel': lambda api, a: api.edit_model(json.loads(a[0])) if a else _missing_arg('JSON data'),
+    'enableModel': lambda api, a: api.enable_model(a[0], a[1].lower() in ('true', '1', 'yes')) if len(a) >= 2 else _missing_arg('model ID and true/false'),
+    'getCurrentCustomer': lambda api, a: api.get_current_customer(),
+}
+
+_ALIAS_INFO = {
+    'listFilesByTimeRange': 'meetings list',
+    'searchFiles': 'meetings search',
+    'getTranscriptionRecord': 'meetings transcript',
+    'getConclusion': 'meetings summary',
+    'getFileInfo': 'meetings info',
+    'getOutline': 'meetings outline',
+    'listFolders': 'folders list',
+    'changeFolder': 'folders move',
+    'createFolder': 'folders create',
+    'listTodos': 'todos list',
+    'clearCompletedTodos': 'todos clear',
+    'deleteTodos': 'todos delete',
+    'getMyDevices': 'devices list',
+    'getDeviceInfo': 'devices info',
+    'unbindDevice': 'devices unbind',
+    'getAiModels': 'models list',
+    'addModel': 'models add',
+    'deleteModel': 'models delete',
+    'editModel': 'models edit',
+    'enableModel': 'models enable',
+    'getCurrentCustomer': 'me',
+}
+
+
+def _extract_days(args: list) -> int:
+    """从参数中提取 --days N。"""
+    for i, arg in enumerate(args):
+        if arg == '--days' and i + 1 < len(args):
+            return int(args[i + 1])
+        if arg.startswith('--days='):
+            return int(arg.split('=', 1)[1])
+    return 7
+
+
+def _extract_page_kwargs(args: list) -> dict:
+    """从参数中提取 --page 和 --size。"""
+    kwargs = {}
+    i = 0
+    while i < len(args):
+        if args[i] == '--page' and i + 1 < len(args):
+            kwargs['page'] = int(args[i + 1]); i += 2
+        elif args[i] == '--size' and i + 1 < len(args):
+            kwargs['page_size'] = int(args[i + 1]); i += 2
+        else:
+            i += 1
+    return kwargs
+
+
+def _missing_arg(what: str):
+    """参数缺失时打印错误并返回空 dict。"""
+    print(f"Error: missing required argument: {what}", file=sys.stderr)
+    sys.exit(EXIT_INVALID)
+
+
+def _handle_delete_todos(api, args: list):
+    """处理 deleteTodos 的别名调用。"""
+    if not args:
+        print("Error: missing todo IDs", file=sys.stderr)
+        sys.exit(EXIT_INVALID)
+    raw_ids = " ".join(args).strip()
+    try:
+        parsed = json.loads(raw_ids)
+        todo_ids = parsed if isinstance(parsed, list) else [parsed]
+    except json.JSONDecodeError:
+        todo_ids = [item.strip() for item in raw_ids.split(',') if item.strip()]
+    return api.delete_todos([str(item) for item in todo_ids])
+
+
+def _resolve_alias(command: str, args: list):
+    """将友好命令别名解析为内部命令名。返回 (canonical, modified_args, is_alias)。"""
+    if command in _SIMPLE_ALIASES:
+        return _SIMPLE_ALIASES[command], args, True
+    if command in _SUBCOMMAND_ALIASES:
+        subs = _SUBCOMMAND_ALIASES[command]
+        if not args:
+            print(f"Error: '{command}' requires a subcommand. Available: {', '.join(subs.keys())}", file=sys.stderr)
+            sys.exit(EXIT_INVALID)
+        sub = args[0]
+        if sub not in subs:
+            print(f"Error: unknown subcommand '{command} {sub}'. Available: {', '.join(subs.keys())}", file=sys.stderr)
+            sys.exit(EXIT_INVALID)
+        return subs[sub], args[1:], True
+    return command, args, False
+
+
+def _parse_global_flags(args: list):
+    """从参数列表中提取并剥离全局标志。返回 (flags, remaining_args)。"""
+    flags = {'format': None, 'output_file': None}
+    remaining = []
+    i = 0
+    while i < len(args):
+        if args[i] == '--json':
+            flags['format'] = 'json'; i += 1
+        elif args[i] == '--pretty':
+            flags['format'] = 'pretty'; i += 1
+        elif args[i] == '--text':
+            flags['format'] = 'text'; i += 1
+        elif args[i] == '--table':
+            flags['format'] = 'table'; i += 1
+        elif args[i] == '--output' and i + 1 < len(args):
+            flags['output_file'] = args[i + 1]; i += 2
+        elif args[i].startswith('--output='):
+            flags['output_file'] = args[i].split('=', 1)[1]; i += 1
+        else:
+            remaining.append(args[i]); i += 1
+    if flags['format'] is None:
+        flags['format'] = 'pretty' if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty() else 'json'
+    return flags, remaining
+
+
+def _format_text(result: dict, command: str) -> str:
+    """为常用命令生成人类可读文本摘要。"""
+    data = result.get('data') if isinstance(result, dict) else result
+    if command == 'getCurrentCustomer':
+        d = data if isinstance(data, dict) else {}
+        lines = [f"Name: {d.get('nickname') or d.get('name') or 'N/A'}",
+                 f"Phone: {d.get('phone') or 'N/A'}",
+                 f"Member Level: {d.get('memberLevel') or 'N/A'}",
+                 f"Points: {d.get('pointsAmount', 0)} (used: {d.get('usedPointsAmount', 0)})"]
+        return '\n'.join(lines)
+    if command == 'refreshMembership':
+        d = data if isinstance(data, dict) else {}
+        return f"Member Level: {d.get('memberLevel') or 'N/A'}\nQuota: {d.get('quota') or 'N/A'}"
+    if command in ('listFilesByTimeRange', 'listFiles', 'listFilesPaged'):
+        items = data if isinstance(data, list) else []
+        if not items:
+            return 'No files found.'
+        lines = [f'Total: {len(items)} file(s)']
+        for item in items[:20]:
+            if isinstance(item, dict):
+                name = item.get('originalFilename') or item.get('name') or item.get('id', '?')
+                created = item.get('createTime') or ''
+                lines.append(f'  [{item.get("id", "?")}] {name}  {created}')
+        if len(items) > 20:
+            lines.append(f'  ... and {len(items) - 20} more')
+        return '\n'.join(lines)
+    if command == 'searchFiles':
+        items = data if isinstance(data, list) else []
+        if not items:
+            return 'No results found.'
+        lines = [f'Found {len(items)} result(s):']
+        for item in items[:20]:
+            if isinstance(item, dict):
+                lines.append(f'  [{item.get("id", "?")}] {item.get("originalFilename") or item.get("name", "?")}')
+        return '\n'.join(lines)
+    if command == 'getConclusion':
+        if isinstance(data, list):
+            return '\n\n'.join(str(c.get('content', c)) if isinstance(c, dict) else str(c) for c in data)
+        return str(data)
+    if command == 'getTranscriptionRecord':
+        if isinstance(data, list):
+            lines = []
+            for entry in data:
+                if isinstance(entry, dict):
+                    speaker = entry.get('speakerName') or f"Speaker {entry.get('speakerId', '?')}"
+                    text = entry.get('text', '')
+                    lines.append(f'{speaker}: {text}')
+            return '\n'.join(lines) if lines else str(data)
+        return str(data)
+    if command == 'getOutline':
+        return str(data) if data else 'No outline available.'
+    if command == 'getFileInfo':
+        d = data if isinstance(data, dict) else {}
+        return '\n'.join([
+            f"ID: {d.get('id', 'N/A')}",
+            f"Name: {d.get('originalFilename') or d.get('name', 'N/A')}",
+            f"Size: {d.get('fileSize', 'N/A')}",
+            f"Created: {d.get('createTime', 'N/A')}",
+            f"Status: {d.get('status', 'N/A')}",
+        ])
+    if command == 'listFolders':
+        items = data if isinstance(data, list) else []
+        if not items:
+            return 'No folders found.'
+        lines = []
+        for item in items:
+            if isinstance(item, dict):
+                lines.append(f'  [{item.get("id", "?")}] {item.get("name", "?")}')
+        return '\n'.join(lines)
+    if command == 'listTodos':
+        items = data if isinstance(data, list) else []
+        if not items:
+            return 'No todos found.'
+        lines = []
+        for item in items:
+            if isinstance(item, dict):
+                done = '✓' if item.get('isCompleted') else '○'
+                content = item.get('todoContent', '')
+                lines.append(f'  {done} {content}')
+        return '\n'.join(lines)
+    if command == 'getMyDevices':
+        items = data if isinstance(data, list) else []
+        if not items:
+            return 'No devices found.'
+        lines = []
+        for item in items:
+            if isinstance(item, dict):
+                sn = item.get('serialNumber') or item.get('authSn') or 'N/A'
+                lines.append(f'  [{item.get("id", "?")}] SN: {sn}  {item.get("deviceName", "")}')
+        return '\n'.join(lines)
+    if command == 'getAiModels':
+        items = data if isinstance(data, list) else (data.get('list', []) if isinstance(data, dict) else [])
+        if not items:
+            return 'No models found.'
+        lines = []
+        for item in items:
+            if isinstance(item, dict):
+                enabled = '✓' if item.get('enabled') else '✗'
+                lines.append(f'  [{item.get("id", "?")}] {enabled} {item.get("name", "?")}')
+        return '\n'.join(lines)
+    if isinstance(data, dict) or (data is None and isinstance(result, dict)):
+        d = data if isinstance(data, dict) else result
+        return '\n'.join(f'{k}: {v}' for k, v in d.items())
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
+
+def _format_table(result: dict, command: str) -> str:
+    """为列表型结果生成 ASCII 表格。"""
+    data = result.get('data') if isinstance(result, dict) else result
+    list_commands = {
+        'listFilesByTimeRange': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
+        'listFiles': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
+        'listFilesPaged': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
+        'searchFiles': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
+        'listFolders': [('ID', 'id'), ('Name', 'name')],
+        'listTodos': [('Done', 'isCompleted'), ('Content', 'todoContent'), ('Deadline', 'expectedCompleteTime')],
+        'getMyDevices': [('ID', 'id'), ('SN', 'serialNumber'), ('Name', 'deviceName')],
+        'getAiModels': [('ID', 'id'), ('Name', 'name'), ('Enabled', 'enabled')],
+    }
+    if command not in list_commands:
+        return _format_text(result, command)
+    columns = list_commands[command]
+    items = data if isinstance(data, list) else []
+    if not items:
+        return 'No data.'
+    headers = [c[0] for c in columns]
+    keys = [c[1] for c in columns]
+    rows = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        row = []
+        for k in keys:
+            v = item.get(k, '')
+            if k == 'isCompleted':
+                v = '✓' if v else '○'
+            elif k == 'enabled':
+                v = '✓' if v else '✗'
+            row.append(str(v)[:40])
+        rows.append(row)
+    widths = [len(h) for h in headers]
+    for row in rows:
+        for j, cell in enumerate(row):
+            widths[j] = max(widths[j], len(cell))
+    def _fmt_row(cells):
+        return '| ' + ' | '.join(c.ljust(widths[j]) for j, c in enumerate(cells)) + ' |'
+    sep = '+-' + '-+-'.join('-' * w for w in widths) + '-+'
+    lines = [sep, _fmt_row(headers), sep]
+    for row in rows:
+        lines.append(_fmt_row(row))
+    lines.append(sep)
+    return '\n'.join(lines)
+
+
+def _format_output(result, command: str, flags: dict) -> None:
+    """根据 flags 格式化并输出结果。"""
+    fmt = flags.get('format', 'json')
+    output_file = flags.get('output_file')
+    if fmt == 'text':
+        text = _format_text(result, command)
+    elif fmt == 'table':
+        text = _format_table(result, command)
+    elif fmt == 'pretty':
+        text = json.dumps(result, ensure_ascii=False, indent=2)
+    else:
+        text = json.dumps(result, ensure_ascii=False, separators=(',', ':'))
+    if output_file:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(text)
+            f.write('\n')
+        print(f"Output saved to: {output_file}", file=sys.stderr)
+    else:
+        print(text)
+
+
+def _get_user_config_dir() -> Path:
+    """返回 ~/.lynse 目录路径。"""
+    return Path.home() / '.lynse'
+
+
+def _load_user_config() -> dict:
+    """从 ~/.lynse/config.json 加载用户级配置。"""
+    config_file = _get_user_config_dir() / 'config.json'
+    if not config_file.exists():
+        return {}
+    try:
+        with open(config_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
 
 class LynseAPIError(Exception):
@@ -68,31 +499,40 @@ class LynseAPI:
             api_key: API Key
             config_file: 配置文件路径（默认当前目录 .env）
         """
-        # 1. 加载配置
+        # 1. 加载配置（用户级 → 项目级 → 环境变量）
+        self._user_config = _load_user_config()
         self._load_config(config_file)
 
-        # 2. 使用传入参数或环境变量
-        self.api_host = api_host or os.environ.get('LYNSE_API_HOST')
-        self.api_key = api_key or os.environ.get('LYNSE_API_KEY')
+        # 2. 使用传入参数或环境变量或用户配置
+        self.api_host = api_host or os.environ.get('LYNSE_API_HOST') or self._user_config.get('api_host')
+        self.api_key = api_key or os.environ.get('LYNSE_API_KEY') or self._user_config.get('api_key')
         self.owner_id = os.environ.get('LYNSE_OWNER_ID')
 
         # 3. 验证配置
         if not self.api_host:
             raise LynseAPIError(
                 "未设置 LYNSE_API_HOST 环境变量。\n"
-                "请在 .env 文件中配置 API 服务器地址，或运行:\n"
-                '  export LYNSE_API_HOST="http://your-api-host/api"'
+                "请运行 'lynse auth login --api-key <key> --host <url>' 或在 .env 中配置"
             )
         if not self.api_key:
-            raise LynseAPIError(
-                "未设置 LYNSE_API_KEY 环境变量。\n"
-                "请在 .env 文件中配置 API Key，或运行:\n"
-                '  export LYNSE_API_KEY="dk_your_api_key"'
-            )
+            if not os.environ.get("LYNSE_ACCESS_TOKEN", "").strip():
+                raise LynseAPIError(
+                    "未设置 LYNSE_API_KEY 环境变量。\n"
+                    "请运行 'lynse auth login --api-key <key>' 或在 .env 中配置"
+                )
+            self.api_key = ""
 
-        # 4. Token 缓存
-        script_dir = Path(__file__).parent.resolve()
-        self.token_file = Path(os.environ.get('LYNSE_TOKEN_FILE', script_dir / '.token_cache'))
+        # 4. Token 缓存（优先 ~/.lynse/tokens.json）
+        env_token = os.environ.get('LYNSE_TOKEN_FILE')
+        if env_token:
+            self.token_file = Path(env_token)
+        else:
+            user_token = _get_user_config_dir() / 'tokens.json'
+            legacy_token = Path(__file__).parent.resolve() / '.token_cache'
+            if legacy_token.exists() and not user_token.exists():
+                self.token_file = legacy_token
+            else:
+                self.token_file = user_token
         self._access_token: Optional[str] = None
 
     def _load_config(self, config_file: str = None):
@@ -127,6 +567,155 @@ class LynseAPI:
         # JWT 格式：三段 base64 由.连接
         pattern = r'^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$'
         return bool(re.match(pattern, token))
+
+    def _strip_bearer_prefix(self, token: str) -> str:
+        cleaned = (token or "").strip()
+        if cleaned.lower().startswith("bearer "):
+            return cleaned[7:].strip()
+        return cleaned
+
+    def _is_http_injected_token(self, token: str) -> bool:
+        """HTTP 请求体注入的 accessToken（无 TUI 式 dk_ API Key）。"""
+        forced = (os.environ.get("LYNSE_ACCESS_TOKEN") or "").strip()
+        if not forced:
+            return False
+        return self._strip_bearer_prefix(forced) == self._strip_bearer_prefix(token)
+
+    def _should_use_bearer_authorization(self, token: str) -> bool:
+        """默认裸 JWT（与 Lynse SKILL/TUI 一致）；仅 LYNSE_AUTH_USE_BEARER=1 时加 Bearer。"""
+        pref = os.environ.get("LYNSE_AUTH_USE_BEARER", "").strip().lower()
+        return pref in ("1", "true", "yes")
+
+    def _resolve_x_api_key(self, token: str) -> str:
+        """TUI 路径带 X-API-Key；HTTP 仅 token 时不发（服务端确认可省略）。"""
+        if self._is_http_injected_token(token) and not self.api_key:
+            return ""
+        if self.api_key:
+            return self.api_key
+        return (os.environ.get("LYNSE_API_KEY") or "").strip()
+
+    def _build_auth_headers_with_mode(
+        self,
+        token: str,
+        *,
+        use_bearer: bool,
+        extra: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, str]:
+        cleaned = self._strip_bearer_prefix(token)
+        auth_value = f"Bearer {cleaned}" if use_bearer and cleaned else cleaned
+        headers = {
+            "Authorization": auth_value,
+            "Content-Type": "application/json",
+        }
+        x_api_key = self._resolve_x_api_key(token)
+        if x_api_key:
+            headers["X-API-Key"] = x_api_key
+        if extra:
+            headers.update(extra)
+        return headers
+
+    @staticmethod
+    def _lynse_debug_enabled() -> bool:
+        try:
+            from runtime.log_config import enabled_log_categories, is_log_enabled
+
+            if enabled_log_categories():
+                return is_log_enabled("lynse")
+        except Exception:
+            pass
+        for key in ("LYNSE_HTTP_DEBUG", "LYNCLAW_HTTP_DEBUG"):
+            if os.environ.get(key, "").strip().lower() in ("1", "true", "yes"):
+                return True
+        return False
+
+    @staticmethod
+    def _lynse_debug_log_token() -> bool:
+        for key in ("LYNSE_HTTP_DEBUG_LOG_TOKEN", "LYNCLAW_HTTP_DEBUG_LOG_TOKEN"):
+            if os.environ.get(key, "").strip().lower() in ("1", "true", "yes"):
+                return True
+        return False
+
+    def _mask_headers_for_log(self, headers: Dict[str, str]) -> Dict[str, str]:
+        safe = dict(headers)
+        if self._lynse_debug_log_token():
+            return safe
+        for key in list(safe.keys()):
+            lowered = key.lower()
+            if lowered in ("authorization", "x-api-key"):
+                value = str(safe[key])
+                if len(value) > 24:
+                    safe[key] = f"{value[:16]}...{value[-8:]} (len={len(value)})"
+        return safe
+
+    def _log_lynse_request(
+        self,
+        *,
+        method: str,
+        url: str,
+        headers: Dict[str, str],
+        params: Optional[Dict[str, Any]] = None,
+        json_data: Optional[Dict[str, Any]] = None,
+        note: str = "",
+    ) -> None:
+        if not self._lynse_debug_enabled():
+            return
+        body_preview = None
+        if json_data is not None:
+            body_preview = json.dumps(json_data, ensure_ascii=False, default=str)
+            if len(body_preview) > 2000:
+                body_preview = body_preview[:2000] + f"...(truncated, total {len(body_preview)} chars)"
+        payload = {
+            "note": note or None,
+            "method": method,
+            "url": url,
+            "headers": self._mask_headers_for_log(headers),
+            "params": params or None,
+            "json_body": body_preview,
+            "http_injected_token": self._is_http_injected_token(
+                self._strip_bearer_prefix(headers.get("Authorization", ""))
+            ),
+        }
+        print(
+            f"[{_lynse_log_ts()}] [lynse-cli] >>> request {json.dumps(payload, ensure_ascii=False)}",
+            file=sys.stderr,
+            flush=True,
+        )
+
+    def _log_lynse_response(
+        self,
+        *,
+        method: str,
+        url: str,
+        status_code: int,
+        data: Any,
+        text_preview: str = "",
+    ) -> None:
+        if not self._lynse_debug_enabled():
+            return
+        summary: Dict[str, Any] = {"method": method, "url": url, "http_status": status_code}
+        if isinstance(data, dict):
+            summary["business_code"] = data.get("code")
+            summary["business_msg"] = data.get("message") or data.get("msg")
+            if "data" in data:
+                inner = data.get("data")
+                if isinstance(inner, list):
+                    summary["data_count"] = len(inner)
+                elif isinstance(inner, dict):
+                    summary["data_keys"] = list(inner.keys())[:20]
+        if text_preview and not isinstance(data, dict):
+            summary["raw_preview"] = text_preview[:500]
+        print(
+            f"[{_lynse_log_ts()}] [lynse-cli] <<< response {json.dumps(summary, ensure_ascii=False)}",
+            file=sys.stderr,
+            flush=True,
+        )
+
+    def _build_auth_headers(self, token: str, extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+        return self._build_auth_headers_with_mode(
+            token,
+            use_bearer=self._should_use_bearer_authorization(token),
+            extra=extra,
+        )
 
     def _get_cached_token(self) -> Optional[str]:
         """从缓存获取 Token"""
@@ -168,6 +757,12 @@ class LynseAPI:
             'Content-Type': 'application/json'
         }
 
+        self._log_lynse_request(
+            method="POST",
+            url=url,
+            headers=headers,
+            note="exchange_token (API Key -> accessToken)",
+        )
         try:
             response = requests.post(url, headers=headers, timeout=30)
 
@@ -178,6 +773,7 @@ class LynseAPI:
                 )
 
             data = response.json()
+            self._log_lynse_response(method="POST", url=url, status_code=response.status_code, data=data)
             data_payload = data.get('data') if isinstance(data, dict) else None
             data_payload = data_payload if isinstance(data_payload, dict) else {}
             access_token = data_payload.get('accessToken') or data.get('accessToken')
@@ -198,16 +794,19 @@ class LynseAPI:
 
     def _get_token(self, refresh: bool = False) -> str:
         """获取有效 Token，支持自动刷新"""
+        forced = (os.environ.get("LYNSE_ACCESS_TOKEN") or "").strip()
+        if forced and not refresh:
+            if self._validate_token(forced):
+                self._access_token = forced
+                return forced
+
         if not refresh:
             cached = self._get_cached_token()
             if cached:
                 # 验证 Token 是否有效
                 try:
                     test_url = f"{self.api_host}/api/business/customer/current"
-                    test_headers = {
-                        'Authorization': cached,
-                        'X-API-Key': self.api_key
-                    }
+                    test_headers = self._build_auth_headers(cached)
                     test_response = requests.get(test_url, headers=test_headers, timeout=10)
                     if test_response.status_code == 200:
                         try:
@@ -246,10 +845,7 @@ class LynseAPI:
 
         try:
             url = f"{self.api_host}/api/business/customer/current"
-            headers = {
-                'Authorization': token,
-                'X-API-Key': self.api_key
-            }
+            headers = self._build_auth_headers(token)
             response = requests.get(url, headers=headers, timeout=10)
             if response.status_code == 200:
                 data = response.json()
@@ -276,7 +872,8 @@ class LynseAPI:
                  headers: Dict[str, str] = None,
                  params: Dict[str, Any] = None,
                  json_data: Dict[str, Any] = None,
-                 retry_count: int = 0) -> Dict[str, Any]:
+                 retry_count: int = 0,
+                 _force_auth_mode: Optional[bool] = None) -> Dict[str, Any]:
         """
         发送 API 请求
 
@@ -296,14 +893,23 @@ class LynseAPI:
         # 获取 Token
         token = self._get_token()
 
-        # 构建请求头
-        request_headers = {
-            'Authorization': token,
-            'X-API-Key': self.api_key,
-            'Content-Type': 'application/json'
-        }
-        if headers:
-            request_headers.update(headers)
+        # 构建请求头（HTTP 注入的 accessToken 默认带 Bearer 前缀）
+        if _force_auth_mode is None:
+            request_headers = self._build_auth_headers(token, headers)
+        else:
+            request_headers = self._build_auth_headers_with_mode(
+                token,
+                use_bearer=_force_auth_mode,
+                extra=headers,
+            )
+        self._log_lynse_request(
+            method=method,
+            url=url,
+            headers=request_headers,
+            params=params,
+            json_data=json_data,
+            note=f"business_api retry={retry_count}",
+        )
 
         try:
             response = requests.request(
@@ -324,10 +930,36 @@ class LynseAPI:
             except json.JSONDecodeError:
                 data = {'raw': response.text}
 
+            self._log_lynse_response(
+                method=method,
+                url=url,
+                status_code=response.status_code,
+                data=data,
+                text_preview=response.text,
+            )
+
             # 检查业务错误码
             code = data.get('code')
             if code and code != 200:
                 message = data.get('message') or data.get('msg') or data.get('raw') or '未知错误'
+                # Bearer / 裸 JWT 不一致时自动切换一次（兼容不同 Lynse 网关约定）
+                if retry_count == 0 and code in (2000, 401, 403):
+                    use_bearer_now = self._should_use_bearer_authorization(token)
+                    alt_headers = self._build_auth_headers_with_mode(
+                        token,
+                        use_bearer=not use_bearer_now,
+                        extra=headers,
+                    )
+                    if alt_headers.get("Authorization") != request_headers.get("Authorization"):
+                        return self._request(
+                            method,
+                            path,
+                            headers=headers,
+                            params=params,
+                            json_data=json_data,
+                            retry_count=retry_count + 1,
+                            _force_auth_mode=not use_bearer_now,
+                        )
                 raise LynseAPIError(f"API 错误：{message}", code=code)
 
             return data
@@ -339,6 +971,23 @@ class LynseAPI:
                 # 网络错误，重试
                 return self._request(method, path, headers, params, json_data, retry_count + 1)
             raise LynseAPIError(f"网络错误：{e}")
+
+    # ==================== 认证辅助 ====================
+
+    def auth_login(self, api_key: str, api_host: str = None) -> str:
+        """用 API Key 换取 access token 并缓存，返回 token。"""
+        old_host = self.api_host
+        old_key = self.api_key
+        if api_host:
+            self.api_host = api_host
+        self.api_key = api_key
+        try:
+            token = self._refresh_token()
+            return token
+        except Exception:
+            self.api_host = old_host
+            self.api_key = old_key
+            raise
 
     # ==================== 业务方法 ====================
 
@@ -372,6 +1021,10 @@ class LynseAPI:
         if len(phone) >= 11:
             return f"{phone[:3]}****{phone[7:]}"
         return phone
+
+    def refresh_membership(self) -> Dict[str, Any]:
+        """刷新并获取当前会员等级与额度"""
+        return self._request('GET', '/api/business/customer/membership/refresh')
 
     # 文件管理
     def list_files(self) -> Dict[str, Any]:
@@ -469,160 +1122,44 @@ class LynseAPI:
         return self._request('GET', '/api/business/file/conclusion/list',
                             params={'fileId': safe_id})
 
-    def list_todos(self, page_size: int = 100, is_completed: Optional[int] = None) -> Dict[str, Any]:
-        """分页获取文件待办列表。"""
-        page_size = max(1, min(int(page_size or 100), 500))
-        page = 1
-        all_items: List[Dict[str, Any]] = []
-        seen_ids = set()
-        total = None
-
-        while True:
-            body: Dict[str, Any] = {'pageNum': page, 'pageSize': page_size}
-            if is_completed is not None:
-                body['isCompleted'] = 1 if int(is_completed) else 0
-            response = self._request('POST', '/api/business/file/todo/list', json_data=body)
-            payload = response.get('data')
-            items = payload if isinstance(payload, list) else []
-            if isinstance(payload, dict):
-                for key in ('records', 'list', 'rows', 'items'):
-                    value = payload.get(key)
-                    if isinstance(value, list):
-                        items = value
-                        break
-
-            for item in items:
-                if not isinstance(item, dict):
-                    continue
-                todo_id = str(item.get('id') or '')
-                if todo_id and todo_id in seen_ids:
-                    continue
-                if todo_id:
-                    seen_ids.add(todo_id)
-                all_items.append(item)
-
-            raw_total = response.get('total')
-            if raw_total is None and isinstance(payload, dict):
-                raw_total = payload.get('total')
-            try:
-                total = int(raw_total) if raw_total is not None else total
-            except (TypeError, ValueError):
-                total = None
-
-            if not items:
-                break
-            if total is not None and len(all_items) >= total:
-                break
-            if len(items) < page_size:
-                break
-            page += 1
-
+    def list_todos(self, status: str = 'all', page_num: int = 1, page_size: int = 20) -> Dict[str, Any]:
+        """获取全量文件待办后在本地按状态和页码切片。"""
+        safe_status = self._sanitize_param(status, 'safe').lower() or 'all'
+        safe_page_num = max(1, int(page_num or 1))
+        safe_page_size = max(1, min(int(page_size or 20), 100))
+        response = self.list_all_todos()
+        items = response.get('data') if isinstance(response.get('data'), list) else []
+        if safe_status in ('open', 'todo', 'pending', 'unfinished', '0'):
+            items = [item for item in items if int((item or {}).get('isCompleted') or 0) == 0]
+        elif safe_status in ('done', 'completed', 'finished', '1'):
+            items = [item for item in items if int((item or {}).get('isCompleted') or 0) == 1]
+        total = len(items)
+        start = (safe_page_num - 1) * safe_page_size
+        end = start + safe_page_size
         return {
-            'code': 200,
-            'msg': 'SUCCESS',
-            'total': total if total is not None else len(all_items),
-            'data': all_items,
+            'code': response.get('code', 200),
+            'msg': response.get('msg', 'SUCCESS'),
+            'total': total,
+            'data': items[start:end],
         }
 
-    def count_todos(self) -> Dict[str, Any]:
-        """按截止时间统计灵光记已有待办。"""
-        return self._request('GET', '/api/business/file/todo/count')
+    def list_all_todos(self) -> Dict[str, Any]:
+        """获取全量文件待办列表。"""
+        return self._request('POST', '/api/business/file/todo/listall', json_data={})
 
-    @staticmethod
-    def _todo_status_filter(status: str) -> Optional[int]:
-        normalized = str(status or 'all').strip().lower()
-        if normalized in ('open', 'todo', 'pending', 'unfinished', '0', '未完成', '待办'):
-            return 0
-        if normalized in ('done', 'completed', 'finished', '1', '已完成', '完成'):
-            return 1
-        return None
+    def delete_todos(self, todo_ids: list[str]) -> Dict[str, Any]:
+        """删除待办。"""
+        clean_ids = [
+            self._sanitize_param(str(todo_id), 'safe')
+            for todo_id in todo_ids
+            if str(todo_id or '').strip()
+        ]
+        return self._request('POST', '/api/business/file/todo/delete',
+                            json_data={'todoIds': clean_ids})
 
-    @staticmethod
-    def _parse_todo_datetime(value: Any) -> Optional[datetime]:
-        if value in (None, ''):
-            return None
-        text = str(value).strip()
-        if not text:
-            return None
-        text = text.replace('Z', '+00:00')
-        for parser in (
-            lambda item: datetime.fromisoformat(item),
-            lambda item: datetime.strptime(item, '%Y-%m-%d %H:%M:%S'),
-            lambda item: datetime.strptime(item, '%Y-%m-%d'),
-        ):
-            try:
-                parsed = parser(text)
-                if parsed.tzinfo is not None:
-                    parsed = parsed.replace(tzinfo=None)
-                return parsed
-            except ValueError:
-                continue
-        return None
-
-    @staticmethod
-    def _agent_todo_item(item: Dict[str, Any]) -> Dict[str, Any]:
-        return {
-            'todoContent': item.get('todoContent') or '',
-            'owner': item.get('owner') or '',
-            'expectedCompleteTime': item.get('expectedCompleteTime') or '',
-            'fileId': item.get('fileId') or '',
-            'isCompleted': item.get('isCompleted'),
-        }
-
-    def organize_todos(
-        self,
-        status: str = 'all',
-        page_size: int = 100,
-        now: Any = None,
-    ) -> Dict[str, Any]:
-        """读取灵光记已有待办，并按截止时间整理成 agent 友好的分组 JSON。"""
-        base_time = self._parse_todo_datetime(now) if now is not None else datetime.now()
-        if base_time is None:
-            base_time = datetime.now()
-
-        todos_response = self.list_todos(
-            page_size=page_size,
-            is_completed=self._todo_status_filter(status),
-        )
-        items = todos_response.get('data') if isinstance(todos_response, dict) else []
-        items = items if isinstance(items, list) else []
-
-        groups: Dict[str, List[Dict[str, Any]]] = {
-            'expired': [],
-            'nearWeek': [],
-            'nearMonth': [],
-            'future': [],
-            'noDate': [],
-        }
-        seven_days = base_time + timedelta(days=7)
-        thirty_days = base_time + timedelta(days=30)
-
-        for item in items:
-            if not isinstance(item, dict):
-                continue
-            agent_item = self._agent_todo_item(item)
-            deadline = self._parse_todo_datetime(agent_item.get('expectedCompleteTime'))
-            if deadline is None:
-                bucket = 'noDate'
-            elif deadline < base_time:
-                bucket = 'expired'
-            elif deadline <= seven_days:
-                bucket = 'nearWeek'
-            elif deadline <= thirty_days:
-                bucket = 'nearMonth'
-            else:
-                bucket = 'future'
-            groups[bucket].append(agent_item)
-
-        summary = {name: len(values) for name, values in groups.items()}
-        return {
-            'code': 200,
-            'msg': 'SUCCESS',
-            'status': status or 'all',
-            'total': sum(summary.values()),
-            'summary': summary,
-            'groups': groups,
-        }
+    def clear_completed_todos(self) -> Dict[str, Any]:
+        """清理已完成待办。"""
+        return self._request('POST', '/api/business/file/todo/clear', json_data={})
 
     def get_outline(self, file_id: str) -> Dict[str, Any]:
         """获取文件大纲"""
@@ -669,7 +1206,7 @@ class LynseAPI:
         return re.sub(r'\s+', '', str(value or '').strip())
 
     @classmethod
-    def _speaker_name_aliases(cls, value: str) -> Set[str]:
+    def _speaker_name_aliases(cls, value: str) -> set[str]:
         normalized = cls._normalize_speaker_name(value)
         aliases = {str(value or '').strip(), normalized}
         speaker_match = re.fullmatch(r'发言人(\d+)', normalized)
@@ -782,6 +1319,10 @@ class LynseAPI:
         return self._request('GET', '/api/business/deviceMgt/page9',
                             headers={'pageNum': safe_page, 'pageSize': str(page_size)})
 
+    def get_my_devices(self) -> Dict[str, Any]:
+        """获取当前用户绑定设备列表，包含正确 SN 号"""
+        return self._request('GET', '/api/business/device/mine')
+
     def get_device_info(self, device_id: str) -> Dict[str, Any]:
         """获取设备详情"""
         safe_id = self._sanitize_param(device_id, 'safe')
@@ -849,131 +1390,344 @@ class LynseAPI:
         return self._request('GET', '/api/business/sysMenu/tree')
 
 
+def _print_help():
+    """打印帮助信息。"""
+    print(f"Lynse CLI v{CLI_VERSION} — AI-powered meeting transcription & management")
+    print()
+    sections = [
+        ("Quick Commands", [
+            ("me", "Show current user info"),
+            ("meetings list [--days N]", "List recent meetings/files"),
+            ("meetings search <keyword>", "Search meetings by title"),
+            ("meetings transcript <id>", "Get meeting transcription"),
+            ("meetings summary <id>", "Get AI summary"),
+            ("meetings outline <id>", "Get meeting outline"),
+            ("meetings info <id>", "Get meeting details"),
+        ]),
+        ("Folders", [
+            ("folders list", "List folders/groups"),
+            ("folders create <json>", "Create a folder"),
+            ("folders move <json>", "Move files to folder"),
+        ]),
+        ("Todos", [
+            ("todos list [status] [page] [size]", "List todos (all/open/done)"),
+            ("todos delete <ids>", "Delete todos"),
+            ("todos clear", "Clear completed todos"),
+        ]),
+        ("Devices & Models", [
+            ("devices list", "List bound devices"),
+            ("models list", "List AI models"),
+        ]),
+        ("Auth", [
+            ("auth login --api-key <key>", "Save API key & validate"),
+            ("auth status", "Show auth configuration"),
+            ("auth logout [--all]", "Clear cached tokens"),
+            ("auth doctor", "Diagnose auth issues"),
+        ]),
+        ("System", [
+            ("version", "Show version info"),
+            ("doctor", "Run diagnostics"),
+            ("update", "Check for updates"),
+        ]),
+        ("Output Format", [
+            ("--json", "Compact JSON (default when piped)"),
+            ("--pretty", "Pretty JSON (default in terminal)"),
+            ("--text", "Human-readable summary"),
+            ("--table", "ASCII table for lists"),
+            ("--output <file>", "Save output to file"),
+        ]),
+        ("Exit Codes", [
+            ("0", "Success"),
+            ("1", "Invalid args / unknown error"),
+            ("2", "Authentication failure"),
+            ("3", "Network error"),
+            ("4", "Timeout"),
+            ("5", "Permission denied"),
+            ("6", "Server error"),
+        ]),
+    ]
+    for title, cmds in sections:
+        print(f"\n{title}:")
+        for cmd, desc in cmds:
+            print(f"  {cmd:<40s} {desc}")
+    print("\nLegacy API commands (getCurrentCustomer, listFiles, ...) are still supported.")
+
+
+def _handle_auth_command(subcommand: str, args: list, flags: dict):
+    """处理 auth 子命令。"""
+    if subcommand == '__auth_login__':
+        api_key, api_host = None, None
+        i = 0
+        while i < len(args):
+            if args[i] == '--api-key' and i + 1 < len(args):
+                api_key = args[i + 1]; i += 2
+            elif args[i] == '--host' and i + 1 < len(args):
+                api_host = args[i + 1]; i += 2
+            else:
+                i += 1
+        if not api_key:
+            print("Error: --api-key is required. Usage: lynse auth login --api-key dk_xxx", file=sys.stderr)
+            sys.exit(EXIT_INVALID)
+        config_dir = _get_user_config_dir()
+        config_dir.mkdir(parents=True, exist_ok=True)
+        config_file = config_dir / 'config.json'
+        config = {}
+        if config_file.exists():
+            try:
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            except Exception:
+                pass
+        if api_key:
+            config['api_key'] = api_key
+        if api_host:
+            config['api_host'] = api_host
+        try:
+            api = LynseAPI(api_key=api_key, api_host=api_host)
+            token = api.auth_login(api_key, api_host)
+            config['access_token'] = token
+            with open(config_file, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2)
+            token_file = config_dir / 'tokens.json'
+            api._save_token(token)
+            result = {'status': 'ok', 'message': 'API key validated and saved', 'token_cached': True,
+                      'config_path': str(config_file), 'token_path': str(api.token_file)}
+            _format_output(result, 'auth_login', flags)
+        except LynseAPIError as e:
+            print(f"Error: {e.message}", file=sys.stderr)
+            sys.exit(_resolve_exit_code(e))
+        return
+
+    if subcommand == '__auth_status__':
+        ucfg = _load_user_config()
+        # 触发 .env 加载，确保环境变量可用
+        _tmp = LynseAPI.__new__(LynseAPI)
+        _tmp._user_config = ucfg
+        _tmp._load_config(None)
+        host = os.environ.get('LYNSE_API_HOST') or ucfg.get('api_host') or 'not configured'
+        key = os.environ.get('LYNSE_API_KEY') or ucfg.get('api_key') or ''
+        masked_key = f"{key[:6]}...{key[-4:]}" if len(key) > 10 else ('(not set)' if not key else key)
+        token_file = _get_user_config_dir() / 'tokens.json'
+        legacy_token = Path(__file__).parent.resolve() / '.token_cache'
+        actual_token = token_file if token_file.exists() else (legacy_token if legacy_token.exists() else None)
+        token_status = 'cached' if actual_token else 'none'
+        result = {'api_host': host, 'api_key': masked_key, 'token_status': token_status,
+                  'token_file': str(actual_token) if actual_token else 'none',
+                  'config_source': 'env' if os.environ.get('LYNSE_API_HOST') else ('~/.lynse/config.json' if ucfg else '.env')}
+        _format_output(result, 'auth_status', flags)
+        return
+
+    if subcommand == '__auth_logout__':
+        clear_all = '--all' in args
+        removed = []
+        for tf in [_get_user_config_dir() / 'tokens.json', Path(__file__).parent.resolve() / '.token_cache']:
+            if tf.exists():
+                tf.unlink(); removed.append(str(tf))
+        if clear_all:
+            cf = _get_user_config_dir() / 'config.json'
+            if cf.exists():
+                config = {}
+                try:
+                    with open(cf, 'r', encoding='utf-8') as f:
+                        config = json.load(f)
+                except Exception:
+                    pass
+                config.pop('api_key', None); config.pop('access_token', None)
+                with open(cf, 'w', encoding='utf-8') as f:
+                    json.dump(config, f, indent=2)
+                removed.append(str(cf))
+        result = {'status': 'ok', 'removed': removed} if removed else {'status': 'ok', 'message': 'No cached tokens found'}
+        _format_output(result, 'auth_logout', flags)
+        return
+
+    if subcommand == '__auth_doctor__':
+        checks = []
+        def _check(name, ok, detail=''):
+            checks.append({'check': name, 'ok': ok, 'detail': detail})
+            print(f"  {'✓' if ok else '✗'} {name}" + (f": {detail}" if detail else ''), file=sys.stderr)
+        print("Auth diagnostics:", file=sys.stderr)
+        ucfg = _load_user_config()
+        host = os.environ.get('LYNSE_API_HOST') or ucfg.get('api_host') or ''
+        key = os.environ.get('LYNSE_API_KEY') or ucfg.get('api_key') or ''
+        _check('API host configured', bool(host), host or 'not set')
+        _check('API key configured', bool(key), f"{key[:6]}..." if len(key) > 6 else ('not set' if not key else key))
+        if host and key:
+            try:
+                resp = requests.get(host, timeout=5)
+                _check('API host reachable', resp.status_code < 500, f"HTTP {resp.status_code}")
+            except Exception as e:
+                _check('API host reachable', False, str(e))
+            try:
+                api = LynseAPI(api_key=key, api_host=host)
+                token = api.auth_login(key, host)
+                _check('Token exchange', True, f"Token obtained ({len(token)} chars)")
+                try:
+                    api._access_token = token
+                    info = api.get_current_customer()
+                    d = info.get('data') if isinstance(info, dict) else {}
+                    d = d if isinstance(d, dict) else {}
+                    _check('Current user', True, f"{d.get('nickname') or d.get('name') or d.get('id', 'unknown')}")
+                except Exception as e:
+                    _check('Current user', False, str(e))
+            except Exception as e:
+                _check('Token exchange', False, str(e))
+        all_ok = all(c['ok'] for c in checks)
+        print(f"\nResult: {'All checks passed' if all_ok else 'Some checks failed'}", file=sys.stderr)
+        sys.exit(EXIT_SUCCESS if all_ok else EXIT_INVALID)
+        return
+
+
 def main():
     """CLI 入口函数"""
     if len(sys.argv) < 2:
-        print(f"Lynse CLI v{VERSION} - 灵光记跨平台 Python 版")
-        print("用法：python / python3 / py -3 lynse.py <command> [参数...]")
-        print("\n常用命令:")
-        print("  getCurrentCustomer          - 当前用户信息")
-        print("  getUserPoints               - 当前用户积分")
-        print("  getUserPhone                - 当前用户手机号")
-        print("  listFiles                   - 文件列表")
-        print("  listFilesPaged [pageSize]   - 分页获取全部文件")
-        print("  listTodos [pageSize] [all|open|done] - 文件待办列表")
-        print("  countTodos                  - 按截止时间统计待办")
-        print("  organizeTodos [all|open|done] - 按截止时间整理待办")
-        print("  getFileInfo <id>            - 文件详情")
-        print("  getConclusion <id>          - 文件总结")
-        print("  listFolders                 - 文件夹/分组列表")
-        print("  createFolder <json>         - 创建文件夹/分组")
-        print("  changeFolder <json>         - 移动文件到文件夹/分组")
-        print("  renameSpeaker <json>        - 按会议解析并更新发言人名称")
-        print("  editSpeakerInfo <json>      - 直接提交发言人名称更新")
-        print("  getAiModels                 - AI 模型列表")
-        print("  getDevicePage [页码]        - 设备列表")
-        sys.exit(1)
+        _print_help()
+        sys.exit(EXIT_SUCCESS)
 
-    command = sys.argv[1]
-    args = sys.argv[2:]
+    # 1. 剥离全局标志
+    flags, cli_args = _parse_global_flags(sys.argv[1:])
+
+    if not cli_args:
+        _print_help()
+        sys.exit(EXIT_SUCCESS)
+
+    # 2. 解析命令与别名
+    command, args, is_alias = _resolve_alias(cli_args[0], cli_args[1:])
+    display_command = _ALIAS_INFO.get(command, command)
+
+    if LynseAPI._lynse_debug_enabled():
+        print(
+            f"[{_lynse_log_ts()}] [lynse-cli] invoke command={command} (alias={is_alias}) args={json.dumps(args, ensure_ascii=False)}",
+            file=sys.stderr, flush=True,
+        )
 
     try:
+        # 3. 本地命令（不需要 API 实例）
+        if command == '__version__':
+            import platform as _plat
+            req_ver = 'not installed'
+            try:
+                import requests as _req
+                req_ver = getattr(_req, '__version__', 'unknown')
+            except ImportError:
+                pass
+            result = {
+                'version': f'lynse-cli v{CLI_VERSION}',
+                'python': _plat.python_version(),
+                'os': f'{_plat.system()} {_plat.release()}',
+                'requests': req_ver,
+            }
+            if flags.get('format') in ('text', None) or flags.get('format') == 'pretty':
+                for k, v in result.items():
+                    print(f"{k}: {v}")
+            else:
+                _format_output(result, command, flags)
+            return
+
+        if command == '__update__':
+            result = {
+                'version': f'v{CLI_VERSION}',
+                'message': 'lynse-cli is managed via lynclaw skill updates. Run your package manager (npm/skill installer) to update.',
+            }
+            if flags.get('format') in ('text', 'pretty'):
+                print(f"lynse-cli {result['version']}")
+                print(result['message'])
+            else:
+                _format_output(result, command, flags)
+            return
+
+        if command == '__doctor__':
+            checks = []
+            def _check(name, ok, detail=''):
+                checks.append({'check': name, 'ok': ok, 'detail': detail})
+                print(f"  {'✓' if ok else '✗'} {name}" + (f": {detail}" if detail else ''), file=sys.stderr)
+            print("Running diagnostics...\n", file=sys.stderr)
+            import platform as _plat
+            py_ver = _plat.python_version()
+            py_ok = tuple(int(x) for x in py_ver.split('.')[:2]) >= (3, 8)
+            _check('Python >= 3.8', py_ok, py_ver)
+            try:
+                import requests as _req
+                _check('requests installed', True, getattr(_req, '__version__', 'unknown'))
+            except ImportError:
+                _check('requests installed', False, "run: pip install requests")
+            ucfg = _load_user_config()
+            host = os.environ.get('LYNSE_API_HOST') or ucfg.get('api_host') or ''
+            key = os.environ.get('LYNSE_API_KEY') or ucfg.get('api_key') or ''
+            _check('API host configured', bool(host), host[:40] if host else 'not set')
+            masked_key = f"{key[:6]}..." if len(key) > 6 else ''
+            _check('API key configured', bool(key), masked_key if key else 'not set')
+            if host:
+                try:
+                    resp = requests.get(host, timeout=5)
+                    _check('API host reachable', resp.status_code < 500, f"HTTP {resp.status_code}")
+                except Exception as e:
+                    _check('API host reachable', False, str(e)[:80])
+            if host and key:
+                try:
+                    api = LynseAPI()
+                    token = api._get_token(refresh=True)
+                    _check('Token exchange', True, f"Token obtained ({len(token)} chars)")
+                    try:
+                        info = api.get_current_customer()
+                        d = info.get('data') if isinstance(info, dict) else {}
+                        d = d if isinstance(d, dict) else {}
+                        name = d.get('nickname') or d.get('name') or str(d.get('id', '?'))
+                        _check('Current user', True, name)
+                    except Exception as e:
+                        _check('Current user', False, str(e)[:80])
+                except Exception as e:
+                    _check('Token exchange', False, str(e)[:80])
+            tf = _get_user_config_dir() / 'tokens.json'
+            try:
+                tf.parent.mkdir(parents=True, exist_ok=True)
+                _check('Token cache writable', True, str(tf))
+            except Exception as e:
+                _check('Token cache writable', False, str(e)[:80])
+            all_ok = all(c['ok'] for c in checks)
+            print(f"\nResult: {'All checks passed ✓' if all_ok else 'Some checks failed ✗'}", file=sys.stderr)
+            sys.exit(EXIT_SUCCESS if all_ok else EXIT_INVALID)
+            return
+
+        # 4. Auth 子命令（单独处理，可能需要未完整配置的 API）
+        if command.startswith('__auth_'):
+            _handle_auth_command(command, args, flags)
+            return
+
+        # 5. 初始化 API 并执行业务命令
         api = LynseAPI()
 
-        # 命令路由
-        if command == 'getCurrentCustomer':
-            result = api.get_current_customer()
+        if command in _ALIAS_HANDLERS:
+            result = _ALIAS_HANDLERS[command](api, args)
         elif command == 'getUserInfo':
-            if len(args) < 1:
-                print("错误：getUserInfo 需要用户 ID 参数", file=sys.stderr)
-                sys.exit(1)
+            if not args:
+                print("Error: getUserInfo requires a user ID", file=sys.stderr); sys.exit(EXIT_INVALID)
             result = api.get_user_info(args[0])
         elif command == 'getUserPoints':
             result = api.get_user_points()
         elif command == 'getUserPhone':
             result = {'phone': api.get_user_phone()}
-        elif command == 'listFiles':
-            result = api.list_files()
+        elif command == 'refreshMembership':
+            result = api.refresh_membership()
         elif command == 'listFilesPaged':
             page_size = int(args[0]) if args else 100
             result = api.list_files_paged(page_size)
-        elif command == 'searchFiles':
-            if len(args) < 1:
-                print("错误：searchFiles 需要关键词参数", file=sys.stderr)
-                sys.exit(1)
-            page = int(args[1]) if len(args) > 1 else 1
-            page_size = int(args[2]) if len(args) > 2 else 20
-            result = api.search_files(args[0], page=page, page_size=page_size)
-        elif command == 'listTodos':
-            page_size = int(args[0]) if args else 100
-            status = args[1].lower() if len(args) > 1 else 'all'
-            result = api.list_todos(page_size=page_size, is_completed=api._todo_status_filter(status))
-        elif command == 'countTodos':
-            result = api.count_todos()
-        elif command == 'organizeTodos':
-            status = args[0].lower() if args else 'all'
-            page_size = int(args[1]) if len(args) > 1 else 100
-            result = api.organize_todos(status=status, page_size=page_size)
-        elif command == 'getFileInfo':
-            if len(args) < 1:
-                print("错误：getFileInfo 需要文件 ID 参数", file=sys.stderr)
-                sys.exit(1)
-            result = api.get_file_info(args[0])
-        elif command == 'getConclusion' or command == 'getConclusionList':
-            if len(args) < 1:
-                print("错误：getConclusion 需要文件 ID 参数", file=sys.stderr)
-                sys.exit(1)
-            result = api.get_conclusion(args[0])
-        elif command == 'getOutline':
-            if len(args) < 1:
-                print("错误：getOutline 需要文件 ID 参数", file=sys.stderr)
-                sys.exit(1)
-            result = api.get_outline(args[0])
+        elif command == 'listAllTodos':
+            result = api.list_all_todos()
         elif command == 'exportOutline':
-            if len(args) < 1:
-                print("错误：exportOutline 需要文件 ID 参数", file=sys.stderr)
-                sys.exit(1)
+            if not args:
+                print("Error: exportOutline requires a file ID", file=sys.stderr); sys.exit(EXIT_INVALID)
             result = api.export_outline(args[0])
-        elif command == 'listFilesByTimeRange':
-            days = int(args[0]) if args else 7
-            result = api.list_files_by_time_range(days)
-        elif command == 'listFolders':
-            result = api.list_folders()
-        elif command == 'createFolder':
-            if len(args) < 1:
-                print("错误：createFolder 需要 JSON 数据参数", file=sys.stderr)
-                sys.exit(1)
-            result = api.create_folder(json.loads(args[0]))
-        elif command == 'changeFolder':
-            if len(args) < 1:
-                print("错误：changeFolder 需要 JSON 数据参数", file=sys.stderr)
-                sys.exit(1)
-            result = api.change_folder(json.loads(args[0]))
-        elif command == 'getTranscriptionRecord':
-            if len(args) < 1:
-                print("错误：getTranscriptionRecord 需要文件 ID 参数", file=sys.stderr)
-                sys.exit(1)
-            result = api.get_transcription_record(args[0])
         elif command == 'renameSpeaker':
-            if len(args) < 1:
-                print("错误：renameSpeaker 需要 JSON 数据参数", file=sys.stderr)
-                sys.exit(1)
+            if not args:
+                print("Error: renameSpeaker requires JSON data", file=sys.stderr); sys.exit(EXIT_INVALID)
             result = api.rename_speaker(json.loads(args[0]))
         elif command == 'editSpeakerInfo':
-            if len(args) < 1:
-                print("错误：editSpeakerInfo 需要 JSON 数据参数", file=sys.stderr)
-                sys.exit(1)
+            if not args:
+                print("Error: editSpeakerInfo requires JSON data", file=sys.stderr); sys.exit(EXIT_INVALID)
             result = api.edit_speaker_info(json.loads(args[0]))
-        elif command == 'getAiModels':
-            result = api.get_ai_models()
         elif command == 'getDevicePage':
             page = int(args[0]) if args else 1
             result = api.get_device_page(page)
-        elif command == 'getDeviceInfo':
-            if len(args) < 1:
-                print("错误：getDeviceInfo 需要设备 ID 参数", file=sys.stderr)
-                sys.exit(1)
-            result = api.get_device_info(args[0])
         elif command == 'getCurrentUser':
             result = api.get_current_user()
         elif command == 'getRoleList':
@@ -982,30 +1736,35 @@ def main():
             result = api.get_menu_tree()
         elif command == 'login':
             if len(args) < 2:
-                print("错误：login 需要用户名和密码参数", file=sys.stderr)
-                sys.exit(1)
+                print("Error: login requires username and password", file=sys.stderr); sys.exit(EXIT_INVALID)
             result = api.login(args[0], args[1])
+        elif command == 'loginWithPhone':
+            if len(args) < 2:
+                print("Error: loginWithPhone requires phone and captcha", file=sys.stderr); sys.exit(EXIT_INVALID)
+            result = api.login_with_phone(args[0], args[1])
         elif command == 'logout':
             result = api.logout()
         else:
-            print(f"错误：不支持的命令 '{command}'", file=sys.stderr)
-            print("\n支持的命令:")
-            print("  getCurrentCustomer, getUserInfo, getUserPoints, getUserPhone,")
-            print("  listFiles, listFilesPaged, listTodos, countTodos, organizeTodos, getFileInfo, getConclusion, getOutline, exportOutline,")
-            print("  getTranscriptionRecord, renameSpeaker, editSpeakerInfo, getAiModels, getDevicePage, getDeviceInfo, getCurrentUser,")
-            print("  getRoleList, getMenuTree, login, logout")
-            sys.exit(1)
+            print(f"Error: unknown command '{command}'", file=sys.stderr)
+            print("Run 'lynse' with no arguments to see available commands.", file=sys.stderr)
+            sys.exit(EXIT_INVALID)
 
-        # 输出结果
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        # 6. 输出结果
+        _format_output(result, display_command, flags)
 
     except LynseAPIError as e:
-        print(f"错误：{e.message}", file=sys.stderr)
-        sys.exit(e.http_code or e.code or 1)
+        print(f"Error: {e.message}", file=sys.stderr)
+        sys.exit(_resolve_exit_code(e))
+    except json.JSONDecodeError as e:
+        print(f"Error: invalid JSON - {e}", file=sys.stderr)
+        sys.exit(EXIT_INVALID)
     except Exception as e:
-        print(f"错误：{e}", file=sys.stderr)
-        sys.exit(1)
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(EXIT_INVALID)
 
 
 if __name__ == '__main__':
+    if not hasattr(requests, 'get'):
+        print("Error: requests library is not installed. Run: pip install requests", file=sys.stderr)
+        sys.exit(EXIT_INVALID)
     main()
