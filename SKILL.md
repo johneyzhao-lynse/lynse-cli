@@ -69,6 +69,7 @@ python3 lynse.py meetings transcript <id>              # Get transcription
 python3 lynse.py meetings summary <id>                 # Get AI summary
 python3 lynse.py meetings outline <id>                 # Get outline
 python3 lynse.py meetings info <id>                    # Meeting details
+python3 lynse.py meetings organize [--days N] [--execute] [--yes]   # Auto-classify meetings into folders (dry-run by default; --execute applies)
 python3 lynse.py folders list                          # List folders/groups
 python3 lynse.py folders create <json>                 # Create folder
 python3 lynse.py folders move <json>                   # Move files to folder
@@ -92,6 +93,14 @@ python3 lynse.py meetings month 4                # April of current year
 python3 lynse.py meetings week 2026-W16          # ISO week 16 of 2026
 python3 lynse.py meetings range 2026-04-01 2026-04-30   # Custom date range
 ```
+
+**Auto-organize meetings into folders** (`meetings organize`):
+```
+python3 lynse.py meetings organize                       # Dry-run: print a folder plan, change nothing
+python3 lynse.py meetings organize --days 90             # Plan only for the last 90 days
+python3 lynse.py meetings organize --execute --yes       # Apply: create folders + move meetings (non-interactive)
+```
+Classifies meetings (with a summary) into topic folders by title, **reusing existing folders** where they match and creating new ones (icon + ≤6-char name) otherwise; caps at 10 folders + 🗂其他. Default is a safe **dry-run**. `--execute` applies changes; in a non-interactive/agent context it **requires `--yes`** (it refuses otherwise). Meetings without a summary are listed but not moved unless `--include-no-conclusion` is given.
 
 ### Auth & System
 
