@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.0 (2026-06-20)
+
+### New Features
+
+- **`meetings organize`** — auto-classify meetings into Lynse folders by topic. Dry-run plan by default (changes nothing); `--execute` creates folders and moves meetings. Reuses existing folders where they match and proposes new ones (icon + ≤6-char name), capping at 10 folders + 🗂其他. Flags: `--days N` (scope), `--execute` / `--yes` (apply; non-interactive requires `--yes`), `--include-no-conclusion`.
+
 ## 1.5.2 (2026-06-20)
 
 ### Bug Fixes
