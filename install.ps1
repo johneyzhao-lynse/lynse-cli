@@ -174,18 +174,19 @@ function Install-Skill {
 # API 服务器地址
 LYNSE_API_HOST=$apiHostValue
 
-# API Key（从系统控制台获取）
-LYNSE_API_KEY=dk_your_api_key_here
+# API Key — 不要在这里填真实密钥。推荐用交互方式登录（密钥仅保存在本机）：
+#   python lynse.py auth login
+LYNSE_API_KEY=
 
 # [可选] 限定只有此用户 ID 可操作
-# LYNSE_OWNER_ID=2008741550857883650
+# LYNSE_OWNER_ID=
 "@
         Set-Content -Path $envPath -Value $envContent -Encoding UTF8
 
         if ($ApiHost) {
             Write-Info "已设置 API 服务器地址：$ApiHost"
         }
-        Write-Warn "请编辑 .env 文件并填入你的 LYNSE_API_KEY"
+        Write-Warn "运行 auth login 录入你的 LYNSE_API_KEY（不要把密钥写死在 .env）"
     }
 
     Write-Success "安装完成！"
@@ -195,8 +196,9 @@ LYNSE_API_KEY=dk_your_api_key_here
     Write-Host "==================================="
     Write-Host ""
     Write-Host "下一步："
-    Write-Host "  1. 编辑 $targetDir\.env"
-    Write-Host "  2. 填入你的 LYNSE_API_KEY"
+    Write-Host "  1. 录入你的 API Key（交互式，密钥仅保存在本机 ~/.lynse/config.json）："
+    Write-Host "       python lynse.py auth login"
+    Write-Host "  2. 验证：python lynse.py auth status"
     Write-Host "  3. 在 AI 助手中使用 lynse-cli 技能"
     Write-Host ""
     Write-Host "使用方法 (PowerShell):"
