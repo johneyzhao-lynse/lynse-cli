@@ -8,7 +8,7 @@ description: >
   points, file, folder, auth, lynse, 灵光记, 会议, 转写, 总结, 待办, 设备, 模型, 积分, 文件.
   Do NOT use for: generic calendar apps, Zoom/Teams recordings unrelated to Lynse, local file
   system operations, or other platforms that merely share these common words.
-version: 1.5.0
+version: 1.5.1
 metadata:
   openclaw:
     requires:
