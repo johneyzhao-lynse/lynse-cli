@@ -62,6 +62,32 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1" >&2
 }
 
+# 检测可用的 Python 3 解释器（python3 优先，回退 python）
+# 检测结果写入全局变量 PYTHON_BIN，供安装提示使用
+detect_python() {
+    if command -v python3 &> /dev/null; then
+        PYTHON_BIN="python3"
+    elif command -v python &> /dev/null; then
+        # macOS/Linux 上 "python" 可能指向 python2，校验主版本
+        if python -c 'import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1)' 2>/dev/null; then
+            PYTHON_BIN="python"
+        else
+            PYTHON_BIN=""
+        fi
+    else
+        PYTHON_BIN=""
+    fi
+
+    if [ -z "$PYTHON_BIN" ]; then
+        log_error "未检测到 Python 3。请安装 Python 3.8+：https://www.python.org/downloads/"
+        return 1
+    fi
+
+    local py_ver
+    py_ver=$($PYTHON_BIN -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || echo "unknown")
+    log_info "检测到 Python：$PYTHON_BIN (v$py_ver)"
+}
+
 # 检测环境函数
 detect_environment() {
     local target_dir=""
@@ -180,10 +206,10 @@ EOF
     echo "  2. 填入你的 LYNSE_API_KEY"
     echo "  3. 在 AI 助手中使用 lynse-cli 技能"
     echo ""
-    echo "使用方法："
-    echo "  - 查询用户信息：getCurrentCustomer"
-    echo "  - 查询文件列表：listFiles"
-    echo "  - 获取文件总结：getConclusion <fileId>"
+    echo "使用方法（本机检测到的 Python：${PYTHON_BIN:-未检测到}）："
+    echo "  ${PYTHON_BIN:-python3} lynse.py me                       # 查询当前用户信息"
+    echo "  ${PYTHON_BIN:-python3} lynse.py meetings list            # 最近会议列表"
+    echo "  ${PYTHON_BIN:-python3} lynse.py meetings summary <id>    # 会议 AI 总结"
     echo ""
     echo "文档：$target_dir/README.md"
     echo "==================================="
@@ -195,6 +221,9 @@ main() {
     echo "  Lynse CLI 自动安装脚本"
     echo "==================================="
     echo ""
+
+    # 先检测 Python（安装提示里要用到）
+    detect_python || exit 1
 
     local target_dir=$(detect_environment)
     install_skill "$target_dir"

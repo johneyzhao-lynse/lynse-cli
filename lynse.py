@@ -5,11 +5,13 @@ Lynse CLI - 核心 API 封装模块
 跨平台支持：Windows / macOS / Linux
 
 用法：
-    python lynse.py <command> [参数...]
+    python3 lynse.py <command> [参数...]
 
 示例：
-    python lynse.py getCurrentCustomer
-    python lynse.py getFileInfo 12345
+    python3 lynse.py getCurrentCustomer
+    python3 lynse.py getFileInfo 12345
+
+注：Windows 上用 `python` 或 `py -3` 替代 `python3`。
 """
 
 import base64
