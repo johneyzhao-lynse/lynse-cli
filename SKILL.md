@@ -96,6 +96,32 @@ lynse meetings week 25                # Week 25 of current year
 lynse meetings range 2026-04-01 2026-04-30   # Custom date range
 ```
 
+### Output Format Convention for Meeting Lists
+
+When presenting meeting query results to the user, always format the data as a table using these fields from the JSON response:
+
+| Column | JSON Field | Format |
+|--------|-----------|--------|
+| # | (row index) | Sequential number starting from 1 |
+| Date | `recordStartTime` or `createTime` | Show as `YYYY-MM-DD HH:MM` |
+| Duration | `bizDuration` | Convert seconds to `mm:ss` |
+| Folder | `folderName` | Show as-is, empty if null |
+| Title | `originalFilename` | Show as-is, fallback to `filename` |
+
+Sort rows by `recordStartTime` ascending. Append a summary line:
+`Total: N meetings, HH:MM`
+
+**Example output:**
+```
+| # | Date             | Duration | Folder     | Title                        |
+|---|------------------|----------|------------|------------------------------|
+| 1 | 2026-04-02 09:38 | 89:01    | Product R&D | Product spec & AI optimization |
+| 2 | 2026-04-02 11:40 | 58:45    | Sales      | Pricing & revenue sharing    |
+| 3 | 2026-04-03 16:25 | 30:49    | Tech R&D   | User profiling with memory    |
+...
+Total: 15 meetings, 637:03
+```
+
 ### Output Format Control
 
 ```
