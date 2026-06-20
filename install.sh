@@ -180,14 +180,15 @@ install_skill() {
 # API 服务器地址
 LYNSE_API_HOST=$api_host_value
 
-# API Key（从系统控制台获取）
-LYNSE_API_KEY=dk_your_api_key_here
+# API Key — 不要在这里填真实密钥。推荐用交互方式登录（密钥仅保存在本机）：
+#   ${PYTHON_BIN:-python3} lynse.py auth login
+LYNSE_API_KEY=
 
 # [可选] 限定只有此用户 ID 可操作
-# LYNSE_OWNER_ID=2008741550857883650
+# LYNSE_OWNER_ID=
 EOF
         fi
-        log_warn "请编辑 .env 文件并填入你的 LYNSE_API_KEY"
+        log_warn "运行 auth login 录入你的 LYNSE_API_KEY（不要把密钥写死在 .env）"
     fi
 
     # 设置执行权限
@@ -202,8 +203,9 @@ EOF
     echo "==================================="
     echo ""
     echo "下一步："
-    echo "  1. 编辑 $target_dir/.env"
-    echo "  2. 填入你的 LYNSE_API_KEY"
+    echo "  1. 录入你的 API Key（交互式，密钥仅保存在本机 ~/.lynse/config.json）："
+    echo "       ${PYTHON_BIN:-python3} lynse.py auth login"
+    echo "  2. 验证：${PYTHON_BIN:-python3} lynse.py auth status"
     echo "  3. 在 AI 助手中使用 lynse-cli 技能"
     echo ""
     echo "使用方法（本机检测到的 Python：${PYTHON_BIN:-未检测到}）："

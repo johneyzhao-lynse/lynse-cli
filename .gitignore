@@ -10,3 +10,6 @@ autoresearch-lynse-cli/
 *.log
 node_modules/
 .qoder/
+# local `npx skills` install artifacts
+.agents/
+skills-lock.json

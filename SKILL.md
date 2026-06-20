@@ -95,8 +95,11 @@ python3 lynse.py meetings range 2026-04-01 2026-04-30   # Custom date range
 
 ### Auth & System
 
+First-time setup: no key is hardcoded — each user inputs their own, saved locally to `~/.lynse/config.json`.
+
 ```
-python3 lynse.py auth login --api-key <key> [--host <url>]   # Save & validate API key
+python3 lynse.py auth login                    # Interactive prompt for your API key (recommended)
+python3 lynse.py auth login --api-key <key> [--host <url>]   # Or pass the key explicitly
 python3 lynse.py auth status                                  # Show auth config
 python3 lynse.py auth logout [--all]                          # Clear tokens (--all also clears API key)
 python3 lynse.py auth doctor                                  # Diagnose auth issues

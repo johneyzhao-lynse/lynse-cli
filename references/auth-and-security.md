@@ -23,7 +23,11 @@ Header: X-API-Key: $LYNSE_API_KEY
 1. CLI flags (`--api-key`, `--host`)
 2. Environment variables (`LYNSE_API_KEY`, `LYNSE_API_HOST`)
 3. User config (`~/.lynse/config.json`)
-4. Project `.env` file (backward compatible)
+4. Install `.env` file (lowest precedence, backward compatible)
+
+A stale install `.env` key **never** overrides the key saved via `auth login`
+(user config) or an explicit shell export. Prefer `auth login` — no key is
+hardcoded or shipped.
 
 ## Auth Flow
 
@@ -40,14 +44,18 @@ User calls lynse.py
       → Failure → Prompt to check API Key
 ```
 
-**Before every call**: Check `$LYNSE_API_KEY` and `$LYNSE_API_HOST` exist. If not, prompt user:
+**Before every call**: a valid API key + host must be resolvable. Recommended setup (key saved locally to `~/.lynse/config.json`, never hardcoded):
 
 ```bash
-# macOS/Linux
-export LYNSE_API_HOST="https://your-api-host/api"
-export LYNSE_API_KEY="dk_your_api_key_here"
-# Or: cp .env.example .env and fill in values
+python3 lynse.py auth login                 # interactive prompt for your key
+# Or set env vars (e.g. when injected by the platform):
+export LYNSE_API_HOST="https://api.lynse.cn"
+export LYNSE_API_KEY="dk_xxx"
 ```
+
+Token-exchange failures are classified: HTTP 401/403 means the key was rejected
+(check your key); 5xx/429/network errors are retried automatically and reported as
+transient — they do **not** mean your key is wrong.
 
 ## Security Rules
 

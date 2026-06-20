@@ -21,12 +21,32 @@ The install script will:
 ## Manual Install
 
 1. Copy the entire `lynse-cli` directory to the target skills directory
-2. Copy `.env.example` to `.env`, fill in `LYNSE_API_HOST` and `LYNSE_API_KEY`
+2. Copy `.env.example` to `.env` and set `LYNSE_API_HOST` (the API server address)
    - macOS/Linux: `cp .env.example .env`
    - Windows CMD: `copy .env.example .env`
    - PowerShell: `Copy-Item .env.example .env`
 3. Run `pip install -r requirements.txt`
-4. Ready to use — no other configuration needed
+4. Configure your API key — see below
+5. Ready to use
+
+## Configure Your API Key (Required)
+
+No API key is shipped or hardcoded. Each user inputs their own key, which is
+saved locally to `~/.lynse/config.json` (never committed). The recommended way:
+
+```bash
+# Interactive prompt (input is hidden). Runs in any terminal.
+python3 lynse.py auth login
+# Or pass it explicitly:
+python3 lynse.py auth login --api-key dk_xxx
+```
+
+Get your key (format `dk_xxx`) from the system console. Verify with
+`python3 lynse.py auth status`.
+
+Credential precedence (highest → lowest): `--api-key` param → `LYNSE_API_KEY`
+shell env → `~/.lynse/config.json` → install `.env`. A stale `.env` will **not**
+override the key you saved via `auth login`.
 
 ## Environment-Specific Paths
 
@@ -38,6 +58,9 @@ The install script will:
 | Hermes | `~/.hermes/skills/` |
 
 ## Environment Variables
+
+Prefer `auth login` (above). Setting env vars is an alternative — useful when a
+platform injects them for you:
 
 ```powershell
 # PowerShell

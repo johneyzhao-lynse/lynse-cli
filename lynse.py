@@ -506,6 +506,78 @@ def _load_user_config() -> dict:
         return {}
 
 
+def _load_install_env(config_file: Optional[str] = None) -> None:
+    """加载安装目录下的 .env 到 os.environ（最低优先级的凭据来源）。
+
+    调用方若需要特定优先级，必须在本函数之前先捕获 shell 环境变量，因为本
+    函数会覆写 os.environ。
+    """
+    if config_file is None:
+        config_file = str(Path(__file__).parent.resolve() / '.env')
+
+    config_path = Path(config_file)
+    if not config_path.exists():
+        return
+
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#') or '=' not in line:
+                    continue
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip()
+                if key in ('LYNSE_API_HOST', 'LYNSE_API_KEY', 'LYNSE_OWNER_ID'):
+                    os.environ[key] = value
+    except Exception as e:
+        print(f"Warning: failed to read config file: {e}", file=sys.stderr)
+
+
+def _resolve_api_credentials(
+    param_host: Optional[str] = None,
+    param_key: Optional[str] = None,
+    install_env_path: Optional[str] = None,
+    user_config: Optional[Dict[str, Any]] = None,
+) -> tuple:
+    """按统一优先级解析 (api_host, api_key, key_source)：
+
+        显式参数  >  shell 环境变量  >  用户配置 (~/.lynse/config.json)  >  安装 .env
+
+    过时的安装 .env 绝不能覆盖用户通过 `auth login` 保存的密钥或显式 shell 导出，
+    否则 token 刷新会使用错误的密钥并以误导性的 "API Key authentication failed" 失败。
+
+    `key_source` 取值 'param' | 'shell' | 'config' | 'env' | None，用于展示来源。
+    """
+    ucfg = user_config if user_config is not None else _load_user_config()
+    # 在安装 .env 写入 os.environ 之前先捕获 shell 提供的值
+    shell_host = os.environ.get('LYNSE_API_HOST')
+    shell_key = os.environ.get('LYNSE_API_KEY')
+    _load_install_env(install_env_path)
+    env_host = os.environ.get('LYNSE_API_HOST')
+    env_key = os.environ.get('LYNSE_API_KEY')
+
+    if param_key:
+        key, key_source = param_key, 'param'
+    elif shell_key:
+        key, key_source = shell_key, 'shell'
+    elif ucfg.get('api_key'):
+        key, key_source = ucfg.get('api_key'), 'config'
+    else:
+        key, key_source = env_key, 'env'
+
+    if param_host:
+        host = param_host
+    elif shell_host:
+        host = shell_host
+    elif ucfg.get('api_host'):
+        host = ucfg.get('api_host')
+    else:
+        host = env_host
+
+    return host, key, key_source
+
+
 class LynseAPIError(Exception):
     """API 调用异常"""
     def __init__(self, message: str, http_code: int = None, code: int = None):
@@ -538,13 +610,14 @@ class LynseAPI:
             api_key: API Key
             config_file: 配置文件路径（默认当前目录 .env）
         """
-        # 1. 加载配置（用户级 → 项目级 → 环境变量）
+        # 1. 解析凭据（统一优先级：参数 > shell 环境变量 > 用户配置 ~/.lynse/config.json > 安装 .env）
         self._user_config = _load_user_config()
-        self._load_config(config_file)
-
-        # 2. 使用传入参数或环境变量或用户配置
-        self.api_host = api_host or os.environ.get('LYNSE_API_HOST') or self._user_config.get('api_host')
-        self.api_key = api_key or os.environ.get('LYNSE_API_KEY') or self._user_config.get('api_key')
+        self.api_host, self.api_key, _ = _resolve_api_credentials(
+            param_host=api_host,
+            param_key=api_key,
+            install_env_path=config_file,
+            user_config=self._user_config,
+        )
         self.owner_id = os.environ.get('LYNSE_OWNER_ID')
 
         # 3. 验证配置
@@ -575,29 +648,8 @@ class LynseAPI:
         self._access_token: Optional[str] = None
 
     def _load_config(self, config_file: str = None):
-        """从 .env 文件加载配置"""
-        if config_file is None:
-            script_dir = Path(__file__).parent.resolve()
-            config_file = str(script_dir / '.env')
-
-        config_path = Path(config_file)
-        if not config_path.exists():
-            return
-
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith('#'):
-                        continue
-                    if '=' in line:
-                        key, value = line.split('=', 1)
-                        key = key.strip()
-                        value = value.strip()
-                        if key in ('LYNSE_API_HOST', 'LYNSE_API_KEY', 'LYNSE_OWNER_ID'):
-                            os.environ[key] = value
-        except Exception as e:
-            print(f"Warning: failed to read config file: {e}", file=sys.stderr)
+        """从 .env 文件加载配置（委托给模块级 _load_install_env，保留向后兼容）。"""
+        _load_install_env(config_file)
 
     def _validate_token(self, token: str) -> bool:
         """验证 Token 格式（JWT 基本格式）"""
@@ -789,47 +841,77 @@ class LynseAPI:
             print(f"Warning: failed to save token: {e}", file=sys.stderr)
 
     def _refresh_token(self) -> str:
-        """使用 API Key 刷新 Token"""
+        """使用 API Key 刷新 Token（瞬时错误自动重试，错误信息准确归类）。"""
         url = f"{self.api_host}/api/auth/apikey/token"
         headers = {
             'X-API-Key': self.api_key,
             'Content-Type': 'application/json'
         }
 
-        self._log_lynse_request(
-            method="POST",
-            url=url,
-            headers=headers,
-            note="exchange_token (API Key -> accessToken)",
-        )
-        try:
-            response = requests.post(url, headers=headers, timeout=30)
-
-            if response.status_code != 200:
+        # 瞬时错误（服务端 5xx / 429 / 网络）重试，避免一次抖动就整体失败。
+        # 401/403 表示密钥被拒，不重试；其余非 200 视为可重试的瞬时错误。
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            self._log_lynse_request(
+                method="POST",
+                url=url,
+                headers=headers,
+                note=f"exchange_token attempt {attempt}/{max_attempts}",
+            )
+            try:
+                response = requests.post(url, headers=headers, timeout=30)
+            except requests.RequestException as e:
+                if attempt < max_attempts:
+                    time.sleep(0.5 * attempt)
+                    continue
                 raise LynseAPIError(
-                    "API Key authentication failed. Please check your LYNSE_API_KEY.",
-                    http_code=response.status_code
+                    f"Network error during token exchange (retried {max_attempts}x): {e}"
                 )
 
-            data = response.json()
-            self._log_lynse_response(method="POST", url=url, status_code=response.status_code, data=data)
-            data_payload = data.get('data') if isinstance(data, dict) else None
-            data_payload = data_payload if isinstance(data_payload, dict) else {}
-            access_token = data_payload.get('accessToken') or data.get('accessToken')
+            if response.status_code == 200:
+                try:
+                    data = response.json()
+                except json.JSONDecodeError:
+                    raise LynseAPIError(
+                        "API Key authentication failed: server returned invalid response format"
+                    )
+                self._log_lynse_response(
+                    method="POST", url=url, status_code=response.status_code, data=data
+                )
+                data_payload = data.get('data') if isinstance(data, dict) else None
+                data_payload = data_payload if isinstance(data_payload, dict) else {}
+                access_token = data_payload.get('accessToken') or data.get('accessToken')
 
-            if not access_token or access_token == 'null':
-                raise LynseAPIError("API Key authentication failed: returned token is empty")
+                if not access_token or access_token == 'null':
+                    raise LynseAPIError("API Key authentication failed: returned token is empty")
 
-            if not self._validate_token(access_token):
-                raise LynseAPIError("API Key authentication failed: returned token format is invalid")
+                if not self._validate_token(access_token):
+                    raise LynseAPIError(
+                        "API Key authentication failed: returned token format is invalid"
+                    )
 
-            self._save_token(access_token)
-            return access_token
+                self._save_token(access_token)
+                return access_token
 
-        except requests.RequestException as e:
-            raise LynseAPIError(f"Network error: unable to reach API server - {e}")
-        except json.JSONDecodeError:
-            raise LynseAPIError("API Key authentication failed: server returned invalid response format")
+            # 非 200：区分“密钥被拒”与“瞬时服务端错误”
+            if response.status_code in (401, 403):
+                raise LynseAPIError(
+                    f"API key rejected by server (HTTP {response.status_code}). "
+                    "Check your LYNSE_API_KEY (get it from the system console).",
+                    http_code=response.status_code,
+                )
+
+            if attempt < max_attempts:
+                time.sleep(0.5 * attempt)
+                continue
+
+            raise LynseAPIError(
+                f"Token exchange failed: server returned HTTP {response.status_code} "
+                f"(transient server error, retried {max_attempts}x — please try again).",
+                http_code=response.status_code,
+            )
+
+        raise LynseAPIError("Token exchange failed after retries.")
 
     def _get_token(self, refresh: bool = False) -> str:
         """获取有效 Token，支持自动刷新"""
@@ -1567,8 +1649,27 @@ def _handle_auth_command(subcommand: str, args: list, flags: dict):
             else:
                 i += 1
         if not api_key:
-            print("Error: --api-key is required. Usage: lynse auth login --api-key dk_xxx", file=sys.stderr)
-            sys.exit(EXIT_INVALID)
+            # Let the user input their own key interactively (terminal only).
+            # In non-interactive / agent contexts (no TTY) we never hardcode or
+            # guess a key — require it explicitly via --api-key.
+            if sys.stdin.isatty():
+                import getpass
+                try:
+                    api_key = (getpass.getpass(
+                        "Enter your Lynse API key (input hidden, format dk_xxx): "
+                    ) or "").strip()
+                except (KeyboardInterrupt, EOFError):
+                    print("", file=sys.stderr)
+                    sys.exit(EXIT_INVALID)
+            if not api_key:
+                print(
+                    "Error: API key is required.\n"
+                    "  Interactive terminal:  lynse auth login\n"
+                    "  Or pass it explicitly: lynse auth login --api-key dk_xxx\n"
+                    "Get your key from the system console.",
+                    file=sys.stderr,
+                )
+                sys.exit(EXIT_INVALID)
         config_dir = _get_user_config_dir()
         config_dir.mkdir(parents=True, exist_ok=True)
         config_file = config_dir / 'config.json'
@@ -1601,20 +1702,19 @@ def _handle_auth_command(subcommand: str, args: list, flags: dict):
 
     if subcommand == '__auth_status__':
         ucfg = _load_user_config()
-        # 触发 .env 加载，确保环境变量可用
-        _tmp = LynseAPI.__new__(LynseAPI)
-        _tmp._user_config = ucfg
-        _tmp._load_config(None)
-        host = os.environ.get('LYNSE_API_HOST') or ucfg.get('api_host') or 'not configured'
-        key = os.environ.get('LYNSE_API_KEY') or ucfg.get('api_key') or ''
-        masked_key = f"{key[:6]}...{key[-4:]}" if len(key) > 10 else ('(not set)' if not key else key)
+        host, key, key_source = _resolve_api_credentials(user_config=ucfg)
+        masked_key = f"{key[:6]}...{key[-4:]}" if key and len(key) > 10 else ('(not set)' if not key else key)
         token_file = _get_user_config_dir() / 'tokens.json'
         legacy_token = Path(__file__).parent.resolve() / '.token_cache'
         actual_token = token_file if token_file.exists() else (legacy_token if legacy_token.exists() else None)
         token_status = 'cached' if actual_token else 'none'
-        result = {'api_host': host, 'api_key': masked_key, 'token_status': token_status,
+        source_label = {
+            'param': '--api-key', 'shell': 'shell env',
+            'config': '~/.lynse/config.json', 'env': '.env',
+        }.get(key_source, 'unknown')
+        result = {'api_host': host or 'not configured', 'api_key': masked_key, 'token_status': token_status,
                   'token_file': str(actual_token) if actual_token else 'none',
-                  'config_source': 'env' if os.environ.get('LYNSE_API_HOST') else ('~/.lynse/config.json' if ucfg else '.env')}
+                  'config_source': source_label}
         _format_output(result, 'auth_status', flags)
         return
 
@@ -1648,8 +1748,7 @@ def _handle_auth_command(subcommand: str, args: list, flags: dict):
             print(f"  {'✓' if ok else '✗'} {name}" + (f": {detail}" if detail else ''), file=sys.stderr)
         print("Auth diagnostics:", file=sys.stderr)
         ucfg = _load_user_config()
-        host = os.environ.get('LYNSE_API_HOST') or ucfg.get('api_host') or ''
-        key = os.environ.get('LYNSE_API_KEY') or ucfg.get('api_key') or ''
+        host, key, _ = _resolve_api_credentials(user_config=ucfg)
         _check('API host configured', bool(host), host or 'not set')
         _check('API key configured', bool(key), f"{key[:6]}..." if len(key) > 6 else ('not set' if not key else key))
         if host and key:
