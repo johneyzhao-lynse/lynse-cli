@@ -68,7 +68,10 @@ New friendly aliases are available for human and script use:
 
 ```
 lynse me                              # Current user info
-lynse meetings list [--days 7]        # Recent meetings/files
+lynse meetings list [--days 7]        # Recent meetings (past N days)
+lynse meetings month <YYYY-MM>        # Meetings in a specific month
+lynse meetings week <YYYY-Wnn>        # Meetings in a specific ISO week
+lynse meetings range <start> <end>    # Meetings in a date range (YYYY-MM-DD)
 lynse meetings search <keyword>       # Search by title
 lynse meetings transcript <id>        # Get transcription
 lynse meetings summary <id>           # Get AI summary
@@ -82,6 +85,15 @@ lynse todos delete <ids>              # Delete todos
 lynse todos clear                     # Clear completed todos
 lynse devices list                    # List bound devices
 lynse models list                     # List AI models
+```
+
+**Meeting query examples:**
+```
+lynse meetings month 2026-04          # All April 2026 meetings
+lynse meetings month 4                # April of current year
+lynse meetings week 2026-W16          # ISO week 16 of 2026
+lynse meetings week 25                # Week 25 of current year
+lynse meetings range 2026-04-01 2026-04-30   # Custom date range
 ```
 
 ### Output Format Control
@@ -471,6 +483,13 @@ lynse-cli/
 ```
 
 ## 更新日志
+
+### v1.5.0 (2026-06-20)
+- ✅ Added `meetings month <YYYY-MM>` — query meetings in a specific month
+- ✅ Added `meetings week <YYYY-Wnn>` — query meetings in a specific ISO week
+- ✅ Added `meetings range <start> <end>` — query meetings in an arbitrary date range
+- ✅ Flexible argument parsing: `month 4`, `month 2026-04`, `month 2026 4` all work
+- ✅ Proper error messages with exit code 1 for invalid dates/arguments
 
 ### v1.4.0 (2026-06-20)
 - ✅ 新增用户友好命令别名（`me`, `meetings list`, `folders list` 等）

@@ -57,7 +57,7 @@ def _lynse_log_ts() -> str:
 
 
 # CLI 版本
-CLI_VERSION = '1.4.0'
+CLI_VERSION = '1.5.0'
 
 # 语义化退出码
 EXIT_SUCCESS = 0
@@ -104,6 +104,9 @@ _SIMPLE_ALIASES = {
 _SUBCOMMAND_ALIASES = {
     'meetings': {
         'list': 'listFilesByTimeRange',
+        'month': 'listFilesByMonth',
+        'week': 'listFilesByWeek',
+        'range': 'listFilesByRange',
         'search': 'searchFiles',
         'transcript': 'getTranscriptionRecord',
         'summary': 'getConclusion',
@@ -142,6 +145,9 @@ _SUBCOMMAND_ALIASES = {
 
 _ALIAS_HANDLERS = {
     'listFilesByTimeRange': lambda api, a: api.list_files_by_time_range(_extract_days(a)),
+    'listFilesByMonth': lambda api, a: api.list_files_by_month(*_parse_month_args(a)),
+    'listFilesByWeek': lambda api, a: api.list_files_by_week(*_parse_week_args(a)),
+    'listFilesByRange': lambda api, a: api.list_files_by_range(a[0], a[1]) if len(a) >= 2 else _missing_arg('start_date end_date (YYYY-MM-DD)'),
     'searchFiles': lambda api, a: api.search_files(a[0], **_extract_page_kwargs(a[1:])) if a else _missing_arg('search keyword'),
     'getTranscriptionRecord': lambda api, a: api.get_transcription_record(a[0]) if a else _missing_arg('file ID'),
     'getConclusion': lambda api, a: api.get_conclusion(a[0]) if a else _missing_arg('file ID'),
@@ -166,6 +172,9 @@ _ALIAS_HANDLERS = {
 
 _ALIAS_INFO = {
     'listFilesByTimeRange': 'meetings list',
+    'listFilesByMonth': 'meetings month',
+    'listFilesByWeek': 'meetings week',
+    'listFilesByRange': 'meetings range',
     'searchFiles': 'meetings search',
     'getTranscriptionRecord': 'meetings transcript',
     'getConclusion': 'meetings summary',
@@ -231,6 +240,39 @@ def _handle_delete_todos(api, args: list):
     except json.JSONDecodeError:
         todo_ids = [item.strip() for item in raw_ids.split(',') if item.strip()]
     return api.delete_todos([str(item) for item in todo_ids])
+
+
+def _parse_month_args(args: list):
+    """Parse month query args. Accepts: '2026-04', '2026 4', or '4' (current year)."""
+    if not args:
+        print("Error: 'meetings month' requires: <YYYY-MM> or <YYYY> <M> or <M> (current year)", file=sys.stderr)
+        sys.exit(EXIT_INVALID)
+    if len(args) >= 2:
+        return int(args[0]), int(args[1])
+    token = args[0]
+    if '-' in token:
+        parts = token.split('-')
+        return int(parts[0]), int(parts[1])
+    # Single number = month in current year
+    return datetime.now().year, int(token)
+
+
+def _parse_week_args(args: list):
+    """Parse week query args. Accepts: '2026-W15', '2026 15', or '15' (current year)."""
+    if not args:
+        print("Error: 'meetings week' requires: <YYYY-Wnn> or <YYYY> <W> or <W> (current year)", file=sys.stderr)
+        sys.exit(EXIT_INVALID)
+    if len(args) >= 2:
+        return int(args[0]), int(args[1])
+    token = args[0]
+    # Support YYYY-Wnn format
+    if '-W' in token or '-w' in token:
+        parts = token.upper().split('-W')
+        return int(parts[0]), int(parts[1])
+    if '-' in token:
+        parts = token.split('-')
+        return int(parts[0]), int(parts[1])
+    return datetime.now().isocalendar()[0], int(token)
 
 
 def _resolve_alias(command: str, args: list):
@@ -1174,13 +1216,72 @@ class LynseAPI:
                             params={'fileId': safe_id})
 
     def list_files_by_time_range(self, days: int = 7) -> Dict[str, Any]:
-        """按时间范围查询文件"""
+        """按时间范围查询文件（过去 N 天）"""
         end_time = datetime.now()
         start_time = end_time - timedelta(days=days)
 
         params = {
             'startTime': start_time.strftime('%Y-%m-%dT%H:%M:%S'),
             'endTime': end_time.strftime('%Y-%m-%dT%H:%M:%S')
+        }
+        return self._request('GET', '/api/business/file/timeRange/list', params=params)
+
+    def list_files_by_month(self, year: int, month: int) -> Dict[str, Any]:
+        """Query meetings in a specific month.
+
+        Args:
+            year: 4-digit year (e.g. 2026)
+            month: Month number 1-12
+        """
+        if not (1 <= month <= 12):
+            raise LynseAPIError(f"Invalid month: {month}. Must be 1-12.")
+        # First day of month, last day of month
+        start = datetime(year, month, 1)
+        if month == 12:
+            end = datetime(year + 1, 1, 1) - timedelta(seconds=1)
+        else:
+            end = datetime(year, month + 1, 1) - timedelta(seconds=1)
+        params = {
+            'startTime': start.strftime('%Y-%m-%dT%H:%M:%S'),
+            'endTime': end.strftime('%Y-%m-%dT%H:%M:%S')
+        }
+        return self._request('GET', '/api/business/file/timeRange/list', params=params)
+
+    def list_files_by_week(self, year: int, week: int) -> Dict[str, Any]:
+        """Query meetings in a specific ISO week.
+
+        Args:
+            year: 4-digit year (e.g. 2026)
+            week: ISO week number 1-53
+        """
+        if not (1 <= week <= 53):
+            raise LynseAPIError(f"Invalid week: {week}. Must be 1-53.")
+        # ISO week: Monday is day 1
+        start = datetime.strptime(f'{year}-W{week:02d}-1', '%G-W%V-%u')
+        end = start + timedelta(days=6, hours=23, minutes=59, seconds=59)
+        params = {
+            'startTime': start.strftime('%Y-%m-%dT%H:%M:%S'),
+            'endTime': end.strftime('%Y-%m-%dT%H:%M:%S')
+        }
+        return self._request('GET', '/api/business/file/timeRange/list', params=params)
+
+    def list_files_by_range(self, start_date: str, end_date: str) -> Dict[str, Any]:
+        """Query meetings in an arbitrary date range.
+
+        Args:
+            start_date: Start date in YYYY-MM-DD format
+            end_date: End date in YYYY-MM-DD format
+        """
+        try:
+            start = datetime.strptime(start_date, '%Y-%m-%d')
+            end = datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+        except ValueError as e:
+            raise LynseAPIError(f"Invalid date format: {e}. Use YYYY-MM-DD.")
+        if start > end:
+            raise LynseAPIError(f"Start date ({start_date}) must be before end date ({end_date}).")
+        params = {
+            'startTime': start.strftime('%Y-%m-%dT%H:%M:%S'),
+            'endTime': end.strftime('%Y-%m-%dT%H:%M:%S')
         }
         return self._request('GET', '/api/business/file/timeRange/list', params=params)
 
@@ -1397,7 +1498,10 @@ def _print_help():
     sections = [
         ("Quick Commands", [
             ("me", "Show current user info"),
-            ("meetings list [--days N]", "List recent meetings/files"),
+            ("meetings list [--days N]", "List recent meetings (past N days)"),
+            ("meetings month <YYYY-MM>", "List meetings in a specific month"),
+            ("meetings week <YYYY-Wnn>", "List meetings in a specific ISO week"),
+            ("meetings range <start> <end>", "List meetings in a date range (YYYY-MM-DD)"),
             ("meetings search <keyword>", "Search meetings by title"),
             ("meetings transcript <id>", "Get meeting transcription"),
             ("meetings summary <id>", "Get AI summary"),

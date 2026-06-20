@@ -303,6 +303,7 @@ class LynseUnifiedCLI:
         python_commands = {
             'getCurrentCustomer', 'getUserInfo', 'getUserPoints', 'getUserPhone', 'refreshMembership',
             'listFiles', 'listFilesPaged', 'searchFiles', 'listFilesByTimeRange',
+            'listFilesByMonth', 'listFilesByWeek', 'listFilesByRange',
             'listTodos', 'listAllTodos', 'deleteTodos', 'clearCompletedTodos',
             'getFileInfo', 'getConclusion', 'getOutline', 'exportOutline',
             'getTranscriptionRecord', 'renameSpeaker', 'editSpeakerInfo',
