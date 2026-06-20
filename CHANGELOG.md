@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.1 (2026-06-20)
+
+### Bug Fixes
+
+- Retry transient HTTP 429/5xx in `_request` so every command survives a momentary server hiccup (found when the folder-create endpoint returned a 503 mid-organize).
+- `meetings organize --execute` now surfaces folder-creation failures (`folders_failed`) instead of failing silently; affected meetings are skipped and a re-run finishes them once the server recovers.
+- `folders list --text/--table` now shows folder names (read `folderName`; previously rendered `?`).
+
 ## 1.6.0 (2026-06-20)
 
 ### New Features
