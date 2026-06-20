@@ -317,6 +317,52 @@ def _parse_global_flags(args: list):
     return flags, remaining
 
 
+# Commands that return meeting/file lists and should use meeting-friendly table format
+_MEETING_LIST_COMMANDS = {
+    'listFilesByTimeRange', 'listFilesByMonth', 'listFilesByWeek', 'listFilesByRange',
+    'listFiles', 'listFilesPaged', 'searchFiles',
+}
+
+
+def _format_meeting_table(result: dict, command: str) -> str:
+    """Generate a meeting-friendly ASCII table with #, Date, Duration, Folder, Title."""
+    data = result.get('data') if isinstance(result, dict) else result
+    items = data if isinstance(data, list) else []
+    if not items:
+        return 'No meetings found.'
+    # Sort by recordStartTime
+    items_sorted = sorted(
+        [i for i in items if isinstance(i, dict)],
+        key=lambda x: x.get('recordStartTime') or x.get('createTime') or ''
+    )
+    headers = ['#', 'Date', 'Duration', 'Folder', 'Title']
+    rows = []
+    for i, item in enumerate(items_sorted, 1):
+        dt = item.get('recordStartTime') or item.get('createTime') or ''
+        dur = item.get('bizDuration') or 0
+        m, s = divmod(dur, 60)
+        duration_str = f'{m}:{s:02d}'
+        folder = (item.get('folderName') or '') or ''
+        title = (item.get('originalFilename') or item.get('filename') or item.get('id', '?'))
+        rows.append([str(i), dt[:16], duration_str, folder, title[:50]])
+    # Calculate column widths
+    widths = [len(h) for h in headers]
+    for row in rows:
+        for j, cell in enumerate(row):
+            widths[j] = max(widths[j], len(cell))
+    def _fmt_row(cells):
+        return '| ' + ' | '.join(c.ljust(widths[j]) for j, c in enumerate(cells)) + ' |'
+    sep = '+-' + '-+-'.join('-' * w for w in widths) + '-+'
+    total_dur = sum(item.get('bizDuration', 0) or 0 for item in items_sorted)
+    total_m, total_s = divmod(total_dur, 60)
+    lines = [sep, _fmt_row(headers), sep]
+    for row in rows:
+        lines.append(_fmt_row(row))
+    lines.append(sep)
+    lines.append(f'Total: {len(items_sorted)} meetings, {total_m}:{total_s:02d}')
+    return '\n'.join(lines)
+
+
 def _format_text(result: dict, command: str) -> str:
     """为常用命令生成人类可读文本摘要。"""
     data = result.get('data') if isinstance(result, dict) else result
@@ -330,6 +376,21 @@ def _format_text(result: dict, command: str) -> str:
     if command == 'refreshMembership':
         d = data if isinstance(data, dict) else {}
         return f"Member Level: {d.get('memberLevel') or 'N/A'}\nQuota: {d.get('quota') or 'N/A'}"
+    if command in _MEETING_LIST_COMMANDS:
+        items = data if isinstance(data, list) else []
+        if not items:
+            return 'No meetings found.'
+        lines = [f'Total: {len(items)} meeting(s)\n']
+        for i, item in enumerate(items, 1):
+            if not isinstance(item, dict):
+                continue
+            title = item.get('originalFilename') or item.get('filename') or item.get('id', '?')
+            dt = item.get('recordStartTime') or item.get('createTime') or ''
+            dur = item.get('bizDuration') or 0
+            m, s = divmod(dur, 60)
+            folder = item.get('folderName') or ''
+            lines.append(f'  {i:>3}. [{dt}] {m}:{s:02d}  {folder}  {title}')
+        return '\n'.join(lines)
     if command in ('listFilesByTimeRange', 'listFiles', 'listFilesPaged'):
         items = data if isinstance(data, list) else []
         if not items:
@@ -425,12 +486,11 @@ def _format_text(result: dict, command: str) -> str:
 
 def _format_table(result: dict, command: str) -> str:
     """为列表型结果生成 ASCII 表格。"""
+    # Meeting/file list commands use the specialized meeting table
+    if command in _MEETING_LIST_COMMANDS:
+        return _format_meeting_table(result, command)
     data = result.get('data') if isinstance(result, dict) else result
     list_commands = {
-        'listFilesByTimeRange': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
-        'listFiles': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
-        'listFilesPaged': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
-        'searchFiles': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
         'listFolders': [('ID', 'id'), ('Name', 'name')],
         'listTodos': [('Done', 'isCompleted'), ('Content', 'todoContent'), ('Deadline', 'expectedCompleteTime')],
         'getMyDevices': [('ID', 'id'), ('SN', 'serialNumber'), ('Name', 'deviceName')],
@@ -1853,8 +1913,8 @@ def main():
             print("Run 'lynse' with no arguments to see available commands.", file=sys.stderr)
             sys.exit(EXIT_INVALID)
 
-        # 6. 输出结果
-        _format_output(result, display_command, flags)
+        # 6. 输出结果（使用内部命令名匹配格式化器）
+        _format_output(result, command, flags)
 
     except LynseAPIError as e:
         print(f"Error: {e.message}", file=sys.stderr)
