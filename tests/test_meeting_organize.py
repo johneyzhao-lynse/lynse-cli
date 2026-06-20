@@ -199,6 +199,18 @@ class OrganizeMeetingsTests(unittest.TestCase):
         # refused before any writes
         self.assertEqual(self.calls["create"], [])
 
+    def test_execute_surfaces_create_failures(self):
+        # 战略 is not an existing folder -> CREATE; make create_folder fail and
+        # confirm the failure is reported (not swallowed) and no move happens.
+        self._wire([_meeting("m1", "战略：投资讨论")], [])
+        self.api.create_folder = lambda payload: (_ for _ in ()).throw(RuntimeError("server 503"))
+        result = self.api.organize_meetings(execute=True, yes=True)
+        self.assertEqual(result["mode"], "execute")
+        self.assertEqual(result["results"]["folders_created"], [])
+        self.assertTrue(result["results"]["folders_failed"])
+        self.assertEqual(result["results"]["folders_failed"][0]["name"], "🎯战略")
+        self.assertEqual(self.calls["change"], [])  # no target id -> no move
+
 
 if __name__ == "__main__":
     unittest.main()

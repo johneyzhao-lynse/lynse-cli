@@ -620,6 +620,10 @@ def _format_organize_text(result: dict) -> str:
                  f"  Folders reused: {r.get('folders_reused', 0)}",
                  f"  Moved: {r.get('moves_succeeded', 0)}/{r.get('moves_attempted', 0)} meetings",
                  f"  Already in place: {r.get('already_in_place', 0)}"]
+        failed = r.get('folders_failed', []) or []
+        if failed:
+            lines.append(f"  Folders FAILED to create: {len(failed)} "
+                         f"({', '.join(f.get('name', '') for f in failed)} — re-run once the server recovers)")
         errs = r.get('errors', []) or []
         if errs:
             lines.append(f"  Errors: {len(errs)} (e.g. {errs[0].get('error')})")
@@ -716,7 +720,7 @@ def _format_text(result: dict, command: str) -> str:
         lines = []
         for item in items:
             if isinstance(item, dict):
-                lines.append(f'  [{item.get("id", "?")}] {item.get("name", "?")}')
+                lines.append(f'  [{item.get("id", "?")}] {item.get("folderName") or item.get("name") or "?"}')
         return '\n'.join(lines)
     if command == 'listTodos':
         items = data if isinstance(data, list) else []
@@ -766,7 +770,7 @@ def _format_table(result: dict, command: str) -> str:
         'listFiles': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
         'listFilesPaged': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
         'searchFiles': [('ID', 'id'), ('Name', 'originalFilename'), ('Created', 'createTime')],
-        'listFolders': [('ID', 'id'), ('Name', 'name')],
+        'listFolders': [('ID', 'id'), ('Name', 'folderName')],
         'listTodos': [('Done', 'isCompleted'), ('Content', 'todoContent'), ('Deadline', 'expectedCompleteTime')],
         'getMyDevices': [('ID', 'id'), ('SN', 'serialNumber'), ('Name', 'deviceName')],
         'getAiModels': [('ID', 'id'), ('Name', 'name'), ('Enabled', 'enabled')],
@@ -1380,6 +1384,16 @@ class LynseAPI:
                 timeout=30
             )
 
+            # Retry transient server errors (429 / 5xx) so a momentary server
+            # hiccup doesn't fail the whole request.
+            if response.status_code in (429, 500, 502, 503, 504) and retry_count < 2:
+                time.sleep(0.5 * (retry_count + 1))
+                return self._request(
+                    method, path, headers=headers, params=params,
+                    json_data=json_data, retry_count=retry_count + 1,
+                    _force_auth_mode=_force_auth_mode,
+                )
+
             # 检查 HTTP 错误
             self._check_http_error(response.status_code, response.text)
 
@@ -1780,6 +1794,7 @@ class LynseAPI:
         # 4. execute: create new folders, then chunked moves
         reuse_count = sum(1 for f in plan['folders'] if f['action'] == 'REUSE')
         created = []
+        create_errors = []
         folder_id_by_cat = {}
         for f in plan['folders']:
             if f['action'] == 'REUSE':
@@ -1796,6 +1811,8 @@ class LynseAPI:
                 f['target_folder_id'] = new_id
             except Exception as e:
                 f['_error'] = str(e)
+                create_errors.append({'category': f['category'],
+                                      'name': f['target_folder_name'], 'error': str(e)})
 
         moves_attempted = moves_succeeded = 0
         errors = []
@@ -1820,6 +1837,7 @@ class LynseAPI:
             'results': {
                 'folders_created': created,
                 'folders_reused': reuse_count,
+                'folders_failed': create_errors,
                 'moves_attempted': moves_attempted,
                 'moves_succeeded': moves_succeeded,
                 'already_in_place': plan['totals'].get('already_organized', 0),
