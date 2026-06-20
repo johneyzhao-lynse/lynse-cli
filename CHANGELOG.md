@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.5.2 (2026-06-20)
+
+### Bug Fixes
+
+- Stop a stale install `.env` from overriding the API key saved via `auth login` — this caused intermittent `meetings month` failures ("API Key authentication failed") whenever a token refresh was required while a cached token was still valid.
+- Token exchange now retries transient server/network errors (5xx, 429, timeouts) with backoff instead of failing on the first hiccup, and no longer reports server errors as "API Key authentication failed". HTTP 401/403 is reported as a rejected key; everything else as a transient error.
+
+### Changed
+
+- Resolve API credentials with one consistent precedence used by every command: `--api-key` param → shell env (`LYNSE_API_KEY`) → `~/.lynse/config.json` → install `.env`. `auth status` now reports the actual source (`config_source`).
+- `auth login` prompts for the key interactively (hidden input) in a terminal and requires `--api-key` in non-interactive/agent contexts. No API key is hardcoded or shipped.
+- Install scripts (`install.sh`, `install.ps1`) no longer write a placeholder key into `.env`; users are directed to `auth login`.
+
 ## 1.5.1 (2026-06-20)
 
 ### New Features

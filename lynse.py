@@ -59,7 +59,7 @@ def _lynse_log_ts() -> str:
 
 
 # CLI 版本
-CLI_VERSION = '1.5.1'
+CLI_VERSION = '1.5.2'
 
 # 语义化退出码
 EXIT_SUCCESS = 0
