@@ -114,6 +114,7 @@ _SUBCOMMAND_ALIASES = {
         'summary': 'getConclusion',
         'info': 'getFileInfo',
         'outline': 'getOutline',
+        'organize': 'organizeMeetings',
     },
     'folders': {
         'list': 'listFolders',
@@ -155,6 +156,7 @@ _ALIAS_HANDLERS = {
     'getConclusion': lambda api, a: api.get_conclusion(a[0]) if a else _missing_arg('file ID'),
     'getFileInfo': lambda api, a: api.get_file_info(a[0]) if a else _missing_arg('file ID'),
     'getOutline': lambda api, a: api.get_outline(a[0]) if a else _missing_arg('file ID'),
+    'organizeMeetings': lambda api, a: api.organize_meetings(**_parse_organize_args(a)),
     'listFolders': lambda api, a: api.list_folders(),
     'changeFolder': lambda api, a: api.change_folder(json.loads(a[0])) if a else _missing_arg('JSON payload'),
     'createFolder': lambda api, a: api.create_folder(json.loads(a[0])) if a else _missing_arg('JSON data'),
@@ -182,6 +184,7 @@ _ALIAS_INFO = {
     'getConclusion': 'meetings summary',
     'getFileInfo': 'meetings info',
     'getOutline': 'meetings outline',
+    'organizeMeetings': 'meetings organize',
     'listFolders': 'folders list',
     'changeFolder': 'folders move',
     'createFolder': 'folders create',
@@ -208,6 +211,42 @@ def _extract_days(args: list) -> int:
         if arg.startswith('--days='):
             return int(arg.split('=', 1)[1])
     return 7
+
+
+def _parse_organize_args(args: list) -> dict:
+    """Parse `meetings organize` flags.
+
+    Returns {days:int|None, execute:bool, yes:bool, include_no_conclusion:bool}.
+    `days=None` means all meetings (no time filter).
+    """
+    out = {'days': None, 'execute': False, 'yes': False, 'include_no_conclusion': False}
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in ('--days',) and i + 1 < len(args):
+            try:
+                out['days'] = int(args[i + 1])
+            except ValueError:
+                print(f"Error: --days expects an integer, got '{args[i + 1]}'", file=sys.stderr)
+                sys.exit(EXIT_INVALID)
+            i += 2
+        elif arg.startswith('--days='):
+            try:
+                out['days'] = int(arg.split('=', 1)[1])
+            except ValueError:
+                print(f"Error: --days expects an integer", file=sys.stderr)
+                sys.exit(EXIT_INVALID)
+            i += 1
+        elif arg == '--execute':
+            out['execute'] = True; i += 1
+        elif arg == '--yes' or arg == '-y':
+            out['yes'] = True; i += 1
+        elif arg == '--include-no-conclusion':
+            out['include_no_conclusion'] = True; i += 1
+        else:
+            print(f"Error: unknown option '{arg}'. Usage: meetings organize [--days N] [--execute] [--yes] [--include-no-conclusion]", file=sys.stderr)
+            sys.exit(EXIT_INVALID)
+    return out
 
 
 def _extract_page_kwargs(args: list) -> dict:
@@ -319,6 +358,303 @@ def _parse_global_flags(args: list):
     return flags, remaining
 
 
+# ==================== Meeting organizer (classification + planning) ====================
+# Source spec: references/system-prompt.md (10 standard categories). Two practical
+# extras (法务/面试) are included so common business folders are reused rather than
+# dumped into 🗂其他. Order = priority for full-title keyword fallback.
+_CATEGORY_SPEC = [
+    {"key": "产品", "icon": "📦", "name": "产品", "aliases": ["产品", "product", "prd"],
+     "keywords": ["产品", "需求", "功能", "版本", "迭代", "demo", "原型", "roadmap", "feature"],
+     "color": "#EAEBFF"},
+    {"key": "市场", "icon": "📣", "name": "市场", "aliases": ["市场", "营销", "marketing", "推广", "品牌"],
+     "keywords": ["市场", "营销", "推广", "品牌", "marketing", "campaign", "launch", "early-bird"],
+     "color": "#E8F5E9"},
+    {"key": "销售", "icon": "💼", "name": "销售", "aliases": ["销售", "商务", "售前"],
+     "keywords": ["销售", "商务", "客户", "合同", "定价", "报价", "deal", "budget", "合作洽谈"],
+     "color": "#FFF4E5"},
+    {"key": "战略", "icon": "🎯", "name": "战略", "aliases": ["战略", "规划", "愿景"],
+     "keywords": ["战略", "规划", "方向", "愿景", "全球化", "布局", "expansion", "投资", "金融"],
+     "color": "#F3E8FF"},
+    {"key": "旅游", "icon": "🏝", "name": "旅游", "aliases": ["旅游", "出行"],
+     "keywords": ["旅游", "出行", "酒店", "机票", "行程", "travel", "trip", "vacation", "度假"],
+     "color": "#E0F7FA"},
+    {"key": "教育", "icon": "📚", "name": "教育", "aliases": ["教育", "家校", "培训"],
+     "keywords": ["教育", "培训", "课程", "学习", "家校", "学生", "纪律", "亲子", "workshop"],
+     "color": "#FFF8E1"},
+    {"key": "技术", "icon": "🔬", "name": "技术", "aliases": ["技术", "研发"],
+     "keywords": ["技术", "研发", "架构", "算法", "开发", "engineering", "世界模型", "游戏技术"],
+     "color": "#E3F2FD"},
+    {"key": "设计", "icon": "🎨", "name": "设计", "aliases": ["设计"],
+     "keywords": ["设计", "视觉", "交互", "材质", "design", "figma"],
+     "color": "#FCE4EC"},
+    {"key": "客服", "icon": "🎧", "name": "客服", "aliases": ["客服", "售后"],
+     "keywords": ["客服", "支持", "售后", "反馈", "complaint", "support", "ticket"],
+     "color": "#EDE7F6"},
+    {"key": "运营", "icon": "⚙", "name": "运营", "aliases": ["运营"],
+     "keywords": ["运营", "增长", "留存", "活跃", "operation", "growth", "metric"],
+     "color": "#ECEFF1"},
+    # practical extras — reuse existing user folders when present
+    {"key": "法务", "icon": "⚖️", "name": "法务", "aliases": ["法务", "合规"],
+     "keywords": ["法务", "合规", "知识产权"], "color": "#E0E0E0"},
+    {"key": "面试", "icon": "👤", "name": "面试", "aliases": ["面试", "招聘"],
+     "keywords": ["面试", "候选人", "招聘", "岗位"], "color": "#F1F8E9"},
+]
+_MAX_TARGET_FOLDERS = 10
+_OVERFLOW_KEY = "其他"
+_OVERFLOW_FOLDER_NAME = "🗂其他"
+
+# Strips a leading icon/emoji/symbol run so "🏗️产品研发" -> "产品研发".
+_FOLDER_NAME_STRIP_RE = re.compile(r'^[^一-鿿A-Za-z]+')
+
+
+def _normalize_folder_name(name: str) -> str:
+    """Strip leading icon/emoji run and whitespace from a folder name."""
+    s = (name or '').strip()
+    return _FOLDER_NAME_STRIP_RE.sub('', s).strip()
+
+
+def _split_title_prefix(title: str) -> str:
+    """Return the declared-category text before the first full/half-width colon."""
+    t = (title or '').strip()
+    for sep in ('：', ':'):
+        if sep in t:
+            return t.split(sep, 1)[0].strip()
+    return ''
+
+
+def _category_by_key(key: str):
+    for c in _CATEGORY_SPEC:
+        if c['key'] == key:
+            return c
+    return None
+
+
+def _classify_meeting_title(title: str) -> str:
+    """Classify a meeting title to a category key.
+
+    Prefix-primary (the word(s) before ：declare the category), then a full-title
+    keyword fallback in spec priority order. Unknown -> 其他.
+    """
+    t = (title or '').strip()
+    if not t:
+        return _OVERFLOW_KEY
+    prefix = _split_title_prefix(t)
+    if prefix:
+        plow = prefix.lower()
+        for cat in _CATEGORY_SPEC:
+            for al in cat['aliases']:
+                if al and al.lower() in plow:
+                    return cat['key']
+    tlow = t.lower()
+    for cat in _CATEGORY_SPEC:
+        for kw in cat['keywords']:
+            if kw and kw.lower() in tlow:
+                return cat['key']
+    return _OVERFLOW_KEY
+
+
+def _match_existing_folder(category_key: str, existing_folders: list) -> Optional[str]:
+    """Return the id of an existing folder to reuse for a category, or None.
+
+    Matching uses the category's primary name only (exact > startswith > contains)
+    against each folder's icon-stripped name — this avoids keyword false positives
+    (e.g. 技术 must not reuse 产品研发). Ties favor the longest (most specific) name.
+    """
+    if category_key == _OVERFLOW_KEY:
+        primary = '其他'
+    else:
+        cat = _category_by_key(category_key)
+        primary = cat['name'] if cat else None
+    if not primary:
+        return None
+
+    candidates = []  # (score, name_len, folder_id)
+    for f in (existing_folders or []):
+        fid = f.get('id')
+        norm = _normalize_folder_name(f.get('folderName') or f.get('name') or '')
+        if not norm or not fid:
+            continue
+        if norm == primary:
+            candidates.append((3, len(norm), fid))
+        elif norm.startswith(primary):
+            candidates.append((2, len(norm), fid))
+        elif primary in norm:
+            candidates.append((1, len(norm), fid))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda c: (-c[0], -c[1]))
+    return candidates[0][2]
+
+
+def build_organize_plan(meetings: list, existing_folders: list,
+                        include_no_conclusion: bool = False) -> dict:
+    """Build a folder-organization plan (pure, no network).
+
+    Splits meetings with/without a conclusion, classifies the eligible ones into
+    categories, reuses matching existing folders (else proposes new ones), caps
+    distinct categories at _MAX_TARGET_FOLDERS (overflow -> 🗂其他), and marks
+    meetings already in their target folder as already-organized.
+    """
+    valid, no_concl = [], []
+    for m in (meetings or []):
+        if not isinstance(m, dict):
+            continue
+        cid = m.get('conclusionId')
+        has_concl = bool(str(cid).strip()) if cid is not None else False
+        (valid if has_concl else no_concl).append(m)
+
+    pool = valid if not include_no_conclusion else (valid + no_concl)
+
+    groups = {}
+    for m in pool:
+        title = m.get('originalFilename') or m.get('filename') or ''
+        groups.setdefault(_classify_meeting_title(title), []).append(m)
+
+    # Cap distinct categories; fold the smallest into 🗂其他.
+    if len(groups) > _MAX_TARGET_FOLDERS:
+        ordered = sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+        kept = dict(ordered[:_MAX_TARGET_FOLDERS])
+        other_items = list(kept.get(_OVERFLOW_KEY, []))
+        for cat, items in ordered[_MAX_TARGET_FOLDERS:]:
+            if cat == _OVERFLOW_KEY:
+                other_items = list(items) + other_items
+            else:
+                other_items.extend(items)
+        groups = kept
+        if other_items:
+            groups[_OVERFLOW_KEY] = other_items
+
+    folders = []
+    to_move = 0
+    already = 0
+    for cat, items in groups.items():
+        reuse_id = _match_existing_folder(cat, existing_folders)
+        if reuse_id:
+            action, target_id = 'REUSE', reuse_id
+            target_name = next((f.get('folderName') for f in existing_folders
+                                if f.get('id') == reuse_id), None) or cat
+            color = None
+        else:
+            action, target_id = 'CREATE', None
+            if cat == _OVERFLOW_KEY:
+                target_name, color = _OVERFLOW_FOLDER_NAME, '#EEEEEE'
+            else:
+                spec = _category_by_key(cat)
+                target_name = f"{spec['icon']}{spec['name']}" if spec else _OVERFLOW_FOLDER_NAME
+                color = spec['color'] if spec else '#EEEEEE'
+
+        move_ids = []
+        for m in items:
+            if target_id and str(m.get('folderId') or '') == str(target_id):
+                already += 1
+            else:
+                mid = m.get('id')
+                if mid is not None:
+                    move_ids.append(str(mid))
+                    to_move += 1
+
+        folders.append({
+            'category': cat,
+            'target_folder_id': target_id,
+            'target_folder_name': target_name,
+            'action': action,
+            'color': color,
+            'meeting_ids': move_ids,
+            'meeting_count': len(items),
+            'is_overflow': cat == _OVERFLOW_KEY,
+        })
+
+    folders.sort(key=lambda f: (-f['meeting_count'], f['category']))
+
+    return {
+        'mode': 'plan',
+        'code': 200,
+        'scope': {'include_no_conclusion': include_no_conclusion},
+        'totals': {
+            'scanned': len(valid) + len(no_concl),
+            'with_conclusion': len(valid),
+            'no_conclusion': len(no_concl),
+            'already_organized': already,
+            'to_move': to_move,
+        },
+        'folders': folders,
+        'skipped_no_conclusion': ([] if include_no_conclusion else
+                                   [{'id': m.get('id'),
+                                     'title': m.get('originalFilename') or m.get('filename') or ''}
+                                    for m in no_concl]),
+    }
+
+
+# Max files per change_folder call — it is a GET with repeated fileIds= params,
+# so chunk to keep the request URL bounded.
+_MOVE_CHUNK = 50
+
+
+def _extract_folder_id(resp) -> Optional[str]:
+    """Tolerantly extract a newly-created folder id from a create_folder response.
+
+    The API may return the id as a scalar, as data.id, or nested; handle all.
+    """
+    if not isinstance(resp, dict):
+        return None
+    data = resp.get('data')
+    if isinstance(data, dict):
+        return data.get('id') or data.get('folderId')
+    if isinstance(data, str) and data:
+        return data
+    return resp.get('id') or resp.get('folderId')
+
+
+def _format_organize_text(result: dict) -> str:
+    """Render an organize plan (dry-run) or execute result as human-readable text."""
+    if not isinstance(result, dict):
+        return str(result)
+    mode = result.get('mode', 'plan')
+
+    if mode == 'execute':
+        r = result.get('results', {}) or {}
+        created = r.get('folders_created', []) or []
+        lines = ["Organize: executed",
+                 f"  Folders created: {len(created)}" +
+                 (f" ({', '.join(c.get('name', '') for c in created)})" if created else ""),
+                 f"  Folders reused: {r.get('folders_reused', 0)}",
+                 f"  Moved: {r.get('moves_succeeded', 0)}/{r.get('moves_attempted', 0)} meetings",
+                 f"  Already in place: {r.get('already_in_place', 0)}"]
+        errs = r.get('errors', []) or []
+        if errs:
+            lines.append(f"  Errors: {len(errs)} (e.g. {errs[0].get('error')})")
+        skipped = result.get('skipped_no_conclusion', 0)
+        if skipped:
+            lines.append(f"  Skipped (no conclusion): {skipped}")
+        return '\n'.join(lines)
+
+    # plan / dry-run
+    totals = result.get('totals', {}) or {}
+    lines = [
+        "Organize plan (dry-run — nothing changed):",
+        f"  Scanned: {totals.get('scanned', 0)}  "
+        f"(with conclusion: {totals.get('with_conclusion', 0)}, no conclusion: {totals.get('no_conclusion', 0)})",
+        f"  To move: {totals.get('to_move', 0)}  Already organized: {totals.get('already_organized', 0)}",
+        "",
+        "Folders:",
+    ]
+    for f in result.get('folders', []) or []:
+        tag = 'OVERFLOW' if f.get('is_overflow') else ('REUSE' if f.get('action') == 'REUSE' else 'CREATE')
+        name = f.get('target_folder_name') or f.get('category')
+        lines.append(f"  [{tag}] {name} — {f.get('meeting_count', 0)} meeting(s)")
+        if f.get('_error'):
+            lines.append(f"      ! error: {f['_error']}")
+    skipped = result.get('skipped_no_conclusion', []) or []
+    if skipped:
+        lines.append("")
+        lines.append(f"Skipped (no conclusion, not moved): {len(skipped)}")
+        for s in skipped[:10]:
+            lines.append(f"  - {s.get('title') or s.get('id')}")
+        if len(skipped) > 10:
+            lines.append(f"  ... and {len(skipped) - 10} more")
+    return '\n'.join(lines)
+
+
 def _format_text(result: dict, command: str) -> str:
     """为常用命令生成人类可读文本摘要。"""
     data = result.get('data') if isinstance(result, dict) else result
@@ -332,6 +668,8 @@ def _format_text(result: dict, command: str) -> str:
     if command == 'refreshMembership':
         d = data if isinstance(data, dict) else {}
         return f"Member Level: {d.get('memberLevel') or 'N/A'}\nQuota: {d.get('quota') or 'N/A'}"
+    if command == 'organizeMeetings':
+        return _format_organize_text(result)
     if command in ('listFilesByTimeRange', 'listFilesByMonth', 'listFilesByWeek',
                    'listFilesByRange', 'listFiles', 'listFilesPaged', 'searchFiles'):
         items = data if isinstance(data, list) else []
@@ -1381,6 +1719,115 @@ class LynseAPI:
         }
         return self._request('GET', '/api/business/file/changeFolder', params=params)
 
+    def organize_meetings(self, days: int = None, execute: bool = False,
+                          yes: bool = False, include_no_conclusion: bool = False) -> Dict[str, Any]:
+        """Organize meetings into topic folders.
+
+        Fetches all meetings (optionally limited to the last `days` days) and the
+        existing folders, builds a classification plan, and — only when
+        `execute=True` — creates the proposed folders and moves meetings. The
+        default is a dry-run plan that changes nothing.
+
+        Safety: `execute=True` in a non-interactive (non-TTY) context requires
+        `yes=True`, so AI agents must opt in explicitly rather than have a plan
+        auto-applied.
+        """
+        # 1. gather meetings + folders
+        resp = self.list_files_paged(page_size=100)
+        meetings = resp.get('data') if isinstance(resp, dict) else (resp or [])
+        meetings = [m for m in meetings if isinstance(m, dict)]
+        if days:
+            cutoff = datetime.now() - timedelta(days=int(days))
+
+            def _meeting_dt(m):
+                for k in ('recordStartTime', 'createTime'):
+                    raw = (m.get(k) or '').replace('T', ' ')
+                    try:
+                        return datetime.strptime(raw[:19], '%Y-%m-%d %H:%M:%S')
+                    except Exception:
+                        continue
+                return None
+            meetings = [m for m in meetings if _meeting_dt(m) is None or _meeting_dt(m) >= cutoff]
+
+        folders_resp = self.list_folders()
+        existing = folders_resp.get('data') if isinstance(folders_resp, dict) else (folders_resp or [])
+        existing = [f for f in existing if isinstance(f, dict)]
+
+        # 2. plan (pure)
+        plan = build_organize_plan(meetings, existing, include_no_conclusion=include_no_conclusion)
+
+        if not execute:
+            return plan
+
+        # 3. safety gate
+        is_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+        if not yes and not is_tty:
+            print("Error: --execute is non-interactive here. Re-run with --yes to apply the plan "
+                  "(this creates folders and moves meetings).", file=sys.stderr)
+            sys.exit(EXIT_INVALID)
+        if not yes:
+            print(_format_text(plan, 'organizeMeetings'))
+            try:
+                ans = input("\nApply these changes? [y/N] ").strip().lower()
+            except (KeyboardInterrupt, EOFError):
+                print("", file=sys.stderr)
+                sys.exit(EXIT_INVALID)
+            if ans not in ('y', 'yes'):
+                print("Aborted — no changes made.", file=sys.stderr)
+                plan['mode'] = 'plan'
+                return plan
+
+        # 4. execute: create new folders, then chunked moves
+        reuse_count = sum(1 for f in plan['folders'] if f['action'] == 'REUSE')
+        created = []
+        folder_id_by_cat = {}
+        for f in plan['folders']:
+            if f['action'] == 'REUSE':
+                folder_id_by_cat[f['category']] = f['target_folder_id']
+                continue
+            try:
+                r = self.create_folder({'folderName': f['target_folder_name'],
+                                        'color': f.get('color') or '#EEEEEE'})
+                new_id = _extract_folder_id(r)
+                if not new_id:
+                    raise RuntimeError("create_folder returned no folder id")
+                folder_id_by_cat[f['category']] = new_id
+                created.append({'category': f['category'], 'id': new_id, 'name': f['target_folder_name']})
+                f['target_folder_id'] = new_id
+            except Exception as e:
+                f['_error'] = str(e)
+
+        moves_attempted = moves_succeeded = 0
+        errors = []
+        for f in plan['folders']:
+            target = folder_id_by_cat.get(f['category'])
+            ids = f.get('meeting_ids') or []
+            if not target or not ids:
+                continue
+            for i in range(0, len(ids), _MOVE_CHUNK):
+                chunk = ids[i:i + _MOVE_CHUNK]
+                moves_attempted += len(chunk)
+                try:
+                    self.change_folder({'oldFolderId': '', 'newFolderId': target, 'fileIds': chunk})
+                    moves_succeeded += len(chunk)
+                except Exception as e:
+                    errors.extend({'meeting_id': mid, 'error': str(e)} for mid in chunk)
+
+        return {
+            'mode': 'execute',
+            'code': 200,
+            'scope': plan['scope'],
+            'results': {
+                'folders_created': created,
+                'folders_reused': reuse_count,
+                'moves_attempted': moves_attempted,
+                'moves_succeeded': moves_succeeded,
+                'already_in_place': plan['totals'].get('already_organized', 0),
+                'errors': errors,
+            },
+            'skipped_no_conclusion': len(plan.get('skipped_no_conclusion', [])),
+        }
+
     @staticmethod
     def _normalize_speaker_name(value: str) -> str:
         return re.sub(r'\s+', '', str(value or '').strip())
@@ -1586,6 +2033,7 @@ def _print_help():
             ("meetings summary <id>", "Get AI summary"),
             ("meetings outline <id>", "Get meeting outline"),
             ("meetings info <id>", "Get meeting details"),
+            ("meetings organize [--execute] [--yes]", "Auto-classify meetings into folders (dry-run by default)"),
         ]),
         ("Folders", [
             ("folders list", "List folders/groups"),
