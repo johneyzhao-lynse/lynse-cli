@@ -49,7 +49,7 @@ except ImportError:
         def request(*args, **kwargs):
             raise ImportError("requests library is not installed")
     requests = _MissingRequests()
-    print("错误：缺少 requests 库，请运行 'pip install requests' 安装", file=sys.stderr)
+    print("Error: requests library is not installed. Run: pip install requests", file=sys.stderr)
 
 
 def _lynse_log_ts() -> str:
@@ -74,15 +74,15 @@ def _resolve_exit_code(error: 'LynseAPIError') -> int:
     http = error.http_code
     code = error.code
     msg = (error.message or '').lower()
-    if http in (401,) or code in (401, 2000) or 'token' in msg and ('过期' in msg or 'invalid' in msg or 'expired' in msg):
+    if http in (401,) or code in (401, 2000) or 'token' in msg and ('过期' in msg or 'invalid' in msg or 'expired' in msg or 'failed' in msg):
         return EXIT_AUTH
-    if http in (403,) or code in (403,) or '权限不足' in msg:
+    if http in (403,) or code in (403,) or '权限不足' in msg or 'permission' in msg or 'insufficient' in msg:
         return EXIT_PERMISSION
     if http is not None and 500 <= http < 600:
         return EXIT_SERVER
     if 'timeout' in msg or '超时' in msg:
         return EXIT_TIMEOUT
-    if '网络' in msg or 'network' in msg or 'connect' in msg or 'dns' in msg:
+    if '网络' in msg or 'network' in msg or 'connect' in msg or 'dns' in msg or 'unreachable' in msg:
         return EXIT_NETWORK
     if http is not None and http != 200:
         return EXIT_SERVER
@@ -481,13 +481,13 @@ class LynseAPI:
 
     # HTTP 错误码处理映射
     HTTP_ERROR_MESSAGES = {
-        401: "Token 已过期，正在自动刷新...",
-        403: "您的账户权限不足，请联系管理员升级权限",
-        404: "请求的资源不存在",
-        429: "请求过于频繁，请等待 60 秒后重试",
-        500: "服务器暂时不可用，请稍后重试",
-        502: "服务器暂时不可用，请稍后重试",
-        503: "服务器暂时不可用，请稍后重试",
+        401: "Token expired, refreshing automatically...",
+        403: "Insufficient permissions. Contact your administrator to upgrade.",
+        404: "The requested resource was not found.",
+        429: "Rate limit exceeded. Please wait 60 seconds and try again.",
+        500: "Server temporarily unavailable. Please try again later.",
+        502: "Server temporarily unavailable. Please try again later.",
+        503: "Server temporarily unavailable. Please try again later.",
     }
 
     def __init__(self, api_host: str = None, api_key: str = None, config_file: str = None):
@@ -511,14 +511,14 @@ class LynseAPI:
         # 3. 验证配置
         if not self.api_host:
             raise LynseAPIError(
-                "未设置 LYNSE_API_HOST 环境变量。\n"
-                "请运行 'lynse auth login --api-key <key> --host <url>' 或在 .env 中配置"
+                "LYNSE_API_HOST is not configured.\n"
+                "Run 'lynse auth login --api-key <key> --host <url>' or set it in .env"
             )
         if not self.api_key:
             if not os.environ.get("LYNSE_ACCESS_TOKEN", "").strip():
                 raise LynseAPIError(
-                    "未设置 LYNSE_API_KEY 环境变量。\n"
-                    "请运行 'lynse auth login --api-key <key>' 或在 .env 中配置"
+                    "LYNSE_API_KEY is not configured.\n"
+                    "Run 'lynse auth login --api-key <key>' or set it in .env"
                 )
             self.api_key = ""
 
@@ -558,7 +558,7 @@ class LynseAPI:
                         if key in ('LYNSE_API_HOST', 'LYNSE_API_KEY', 'LYNSE_OWNER_ID'):
                             os.environ[key] = value
         except Exception as e:
-            print(f"警告：读取配置文件失败：{e}", file=sys.stderr)
+            print(f"Warning: failed to read config file: {e}", file=sys.stderr)
 
     def _validate_token(self, token: str) -> bool:
         """验证 Token 格式（JWT 基本格式）"""
@@ -747,7 +747,7 @@ class LynseAPI:
             if os.name != 'nt':
                 self.token_file.chmod(0o600)
         except Exception as e:
-            print(f"警告：保存 Token 失败：{e}", file=sys.stderr)
+            print(f"Warning: failed to save token: {e}", file=sys.stderr)
 
     def _refresh_token(self) -> str:
         """使用 API Key 刷新 Token"""
@@ -768,7 +768,7 @@ class LynseAPI:
 
             if response.status_code != 200:
                 raise LynseAPIError(
-                    "API Key 认证失败，请检查 LYNSE_API_KEY 是否正确",
+                    "API Key authentication failed. Please check your LYNSE_API_KEY.",
                     http_code=response.status_code
                 )
 
@@ -779,18 +779,18 @@ class LynseAPI:
             access_token = data_payload.get('accessToken') or data.get('accessToken')
 
             if not access_token or access_token == 'null':
-                raise LynseAPIError("API Key 认证失败：返回的 Token 为空")
+                raise LynseAPIError("API Key authentication failed: returned token is empty")
 
             if not self._validate_token(access_token):
-                raise LynseAPIError("API Key 认证失败：返回的 Token 格式无效")
+                raise LynseAPIError("API Key authentication failed: returned token format is invalid")
 
             self._save_token(access_token)
             return access_token
 
         except requests.RequestException as e:
-            raise LynseAPIError(f"网络错误：无法连接到 API 服务器 - {e}")
+            raise LynseAPIError(f"Network error: unable to reach API server - {e}")
         except json.JSONDecodeError:
-            raise LynseAPIError("API Key 认证失败：服务器返回格式错误")
+            raise LynseAPIError("API Key authentication failed: server returned invalid response format")
 
     def _get_token(self, refresh: bool = False) -> str:
         """获取有效 Token，支持自动刷新"""
@@ -853,7 +853,7 @@ class LynseAPI:
                 data_payload = data_payload if isinstance(data_payload, dict) else {}
                 current_id = data_payload.get('id') or data.get('id')
                 if current_id and current_id != self.owner_id:
-                    raise LynseAPIError("抱歉，这是私密账户，我无法操作")
+                    raise LynseAPIError("Access denied: this is a private account.")
         except LynseAPIError:
             raise
         except Exception:
@@ -941,7 +941,7 @@ class LynseAPI:
             # 检查业务错误码
             code = data.get('code')
             if code and code != 200:
-                message = data.get('message') or data.get('msg') or data.get('raw') or '未知错误'
+                message = data.get('message') or data.get('msg') or data.get('raw') or 'unknown error'
                 # Bearer / 裸 JWT 不一致时自动切换一次（兼容不同 Lynse 网关约定）
                 if retry_count == 0 and code in (2000, 401, 403):
                     use_bearer_now = self._should_use_bearer_authorization(token)
@@ -960,7 +960,7 @@ class LynseAPI:
                             retry_count=retry_count + 1,
                             _force_auth_mode=not use_bearer_now,
                         )
-                raise LynseAPIError(f"API 错误：{message}", code=code)
+                raise LynseAPIError(f"API error: {message}", code=code)
 
             return data
 
