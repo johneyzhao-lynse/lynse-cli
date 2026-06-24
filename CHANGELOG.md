@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.2 (2026-06-24)
+
+### New Features
+
+- Add `bin/lynse.js` — a cross-platform npm command wrapper that replaces the Windows-only `lynse.bat`, making the `lynse` command work via npm on all platforms (macOS, Linux, Windows).
+
+### Changed
+
+- Update `package.json` entry point from `lynse.bat` to `bin/lynse.js`; include `CHANGELOG.md`, `install-guide.md`, `reference.md`, and `references/` in the npm package files list.
+- Update documentation (`SKILL.md`, `reference.md`, `references/platform-paths.md`) to reflect the new npm wrapper and remove `.bat` references.
+- Clean up `.gitignore` with explicit patterns for generated OpenAPI client artifacts.
+
 ## 1.6.1 (2026-06-20)
 
 ### Bug Fixes
