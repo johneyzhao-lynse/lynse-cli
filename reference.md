@@ -35,13 +35,13 @@ lynse-cli/
 ├── install-guide.md      # Installation and deployment guide
 ├── lynse.py              # Core API module
 ├── lynse_cli.py          # Unified CLI entry point
+├── bin/lynse.js          # Cross-platform npm command wrapper
 ├── requirements.txt      # Python dependencies
 ├── install.sh            # macOS/Linux install script
 ├── install.ps1           # Windows install script
 ├── .env                  # Configuration file
 ├── lynse_unified.sh      # Shell CLI (backward compat, macOS/Linux only)
-├── api_wrapper.sh        # Shell API wrapper (backward compat, macOS/Linux only)
-└── lynse.bat             # Windows .bat wrapper (backward compat)
+└── api_wrapper.sh        # Shell API wrapper (backward compat, macOS/Linux only)
 ```
 
 ## Changelog

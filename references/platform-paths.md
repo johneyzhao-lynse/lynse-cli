@@ -32,4 +32,4 @@ The other difference across environments is **how env vars reach the process**:
 
 1. Use `python3` on macOS/Linux, `python` (or `py -3`) on Windows. Never assume one name works everywhere.
 2. Never use shell scripts (`lynse_unified.sh`, `api_wrapper.sh`) in instructions — they don't work on Windows.
-3. The `.bat` wrapper (`lynse.bat`) is Windows-only and is itself just a thin `python lynse.py` launcher.
+3. On Windows, call `python lynse.py ...` or `py -3 lynse.py ...` directly from the skill directory. For npm installs, the `lynse` command is provided by `bin/lynse.js`, and npm creates the Windows `.cmd` shim automatically.

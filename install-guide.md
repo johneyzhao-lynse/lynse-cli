@@ -21,10 +21,11 @@ The install script will:
 ## Manual Install
 
 1. Copy the entire `lynse-cli` directory to the target skills directory
-2. Copy `.env.example` to `.env` and set `LYNSE_API_HOST` (the API server address)
-   - macOS/Linux: `cp .env.example .env`
-   - Windows CMD: `copy .env.example .env`
-   - PowerShell: `Copy-Item .env.example .env`
+2. Create `.env` and set `LYNSE_API_HOST` (the API server address)
+   ```env
+   LYNSE_API_HOST=https://api.lynse.cn
+   LYNSE_API_KEY=
+   ```
 3. Run `pip install -r requirements.txt`
 4. Configure your API key — see below
 5. Ready to use

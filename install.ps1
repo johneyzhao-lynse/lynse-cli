@@ -206,9 +206,6 @@ LYNSE_API_KEY=
     Write-Host "  python lynse.py listFiles             - 文件列表"
     Write-Host "  python lynse.py getConclusion <id>    - 文件总结"
     Write-Host ""
-    Write-Host "或使用 .bat 包装器 (CMD):"
-    Write-Host "  lynse getCurrentCustomer"
-    Write-Host ""
     Write-Host "==================================="
 }
 

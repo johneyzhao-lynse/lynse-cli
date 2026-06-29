@@ -1,14 +1,19 @@
 ---
 name: lynse-cli
+slug: lynse-cli
+displayName: 灵光记 / Lynse CLI
 description: >
   Lynse CLI skill for querying meeting transcriptions, managing files, todos, devices, and AI models
-  via the lynse.ai API. Use when the user asks about meetings, transcriptions, summaries, todos,
+  via the lynse.ai API. Lynse is the English product context; in Chinese contexts it is called
+  灵光记. Use this skill when the user says "Lynse", "lynse-cli", "灵光记", or asks to use
+  灵光记, including requests about meetings, transcriptions, summaries, todos,
   file/folder management, account info, points balance, device binding, AI model configuration, or
   any Lynse platform operations. Trigger on: meeting, transcription, summary, todo, device, model,
-  points, file, folder, auth, lynse, 灵光记, 会议, 转写, 总结, 待办, 设备, 模型, 积分, 文件.
+  points, file, folder, auth, lynse, Lynse, lynse-cli, 灵光记, 使用灵光记, 用灵光记, 会议, 转写,
+  总结, 待办, 设备, 模型, 积分, 文件.
   Do NOT use for: generic calendar apps, Zoom/Teams recordings unrelated to Lynse, local file
   system operations, or other platforms that merely share these common words.
-version: 1.5.1
+version: 1.6.3
 metadata:
   openclaw:
     requires:
@@ -52,7 +57,7 @@ For brevity, the command examples below use `python3` as the default — substit
 (or `py -3`) on Windows.
 
 - Do NOT use shell scripts (`lynse_unified.sh`, `api_wrapper.sh`) — they don't run on Windows.
-- The `lynse` shorthand and `lynse.bat` only work where a wrapper is on PATH; in skill contexts, call the Python entrypoint directly.
+- In skill contexts, call the Python entrypoint directly. The npm `lynse` wrapper is for end-user shell usage.
 
 ## Commands
 

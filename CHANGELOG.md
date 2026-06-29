@@ -1,15 +1,25 @@
 # Changelog
 
+## 1.6.3 (2026-06-29)
+
+### Changed
+
+- Clarify that Lynse is the English product context and 灵光记 is the Chinese product name, so requests to use 灵光记 route to this CLI skill.
+- Remove all OpenAPI-generated docs (`lynse-cli-a/docs/*`, `lynse-cli-b/docs/*`) and associated generated artifacts to reduce repository bloat.
+- Remove deprecated `lynse.bat` (Windows batch wrapper), `.env.example`, and old GitHub Actions `npm-publish.yml` workflow.
+- Update `lynse.py` CLI version from 1.6.1 to 1.6.3; update `SKILL.md` version from 1.5.1 to 1.6.3.
+- Remove `.env.example` from npm package file list.
+
 ## 1.6.2 (2026-06-24)
 
 ### New Features
 
-- Add `bin/lynse.js` — a cross-platform npm command wrapper that replaces the Windows-only `lynse.bat`, making the `lynse` command work via npm on all platforms (macOS, Linux, Windows).
+- Add `bin/lynse.js` — a cross-platform npm command wrapper that replaces the old Windows batch wrapper, making the `lynse` command work via npm on all platforms (macOS, Linux, Windows).
 
 ### Changed
 
-- Update `package.json` entry point from `lynse.bat` to `bin/lynse.js`; include `CHANGELOG.md`, `install-guide.md`, `reference.md`, and `references/` in the npm package files list.
-- Update documentation (`SKILL.md`, `reference.md`, `references/platform-paths.md`) to reflect the new npm wrapper and remove `.bat` references.
+- Update `package.json` entry point to `bin/lynse.js`; include `CHANGELOG.md`, `install-guide.md`, `reference.md`, and `references/` in the npm package files list.
+- Update documentation (`SKILL.md`, `reference.md`, `references/platform-paths.md`) to reflect the new npm wrapper and remove batch-wrapper references.
 - Clean up `.gitignore` with explicit patterns for generated OpenAPI client artifacts.
 
 ## 1.6.1 (2026-06-20)
