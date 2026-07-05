@@ -59,7 +59,7 @@ def _lynse_log_ts() -> str:
 
 
 # CLI 版本
-CLI_VERSION = '1.6.3'
+CLI_VERSION = '1.6.4'
 
 # 语义化退出码
 EXIT_SUCCESS = 0
@@ -111,6 +111,7 @@ _SUBCOMMAND_ALIASES = {
         'range': 'listFilesByRange',
         'search': 'searchFiles',
         'transcript': 'getTranscriptionRecord',
+        'transcript-text': 'getTranscriptionText',
         'summary': 'getConclusion',
         'info': 'getFileInfo',
         'outline': 'getOutline',
@@ -153,6 +154,7 @@ _ALIAS_HANDLERS = {
     'listFilesByRange': lambda api, a: api.list_files_by_range(a[0], a[1]) if len(a) >= 2 else _missing_arg('start_date end_date (YYYY-MM-DD)'),
     'searchFiles': lambda api, a: api.search_files(a[0], **_extract_page_kwargs(a[1:])) if a else _missing_arg('search keyword'),
     'getTranscriptionRecord': lambda api, a: api.get_transcription_record(a[0]) if a else _missing_arg('file ID'),
+    'getTranscriptionText': lambda api, a: api.get_transcription_text(a[0]) if a else _missing_arg('file ID'),
     'getConclusion': lambda api, a: api.get_conclusion(a[0]) if a else _missing_arg('file ID'),
     'getFileInfo': lambda api, a: api.get_file_info(a[0]) if a else _missing_arg('file ID'),
     'getOutline': lambda api, a: api.get_outline(a[0]) if a else _missing_arg('file ID'),
@@ -181,6 +183,7 @@ _ALIAS_INFO = {
     'listFilesByRange': 'meetings range',
     'searchFiles': 'meetings search',
     'getTranscriptionRecord': 'meetings transcript',
+    'getTranscriptionText': 'meetings transcript-text',
     'getConclusion': 'meetings summary',
     'getFileInfo': 'meetings info',
     'getOutline': 'meetings outline',
@@ -267,6 +270,61 @@ def _missing_arg(what: str):
     """参数缺失时打印错误并返回空 dict。"""
     print(f"Error: missing required argument: {what}", file=sys.stderr)
     sys.exit(EXIT_INVALID)
+
+
+def _transcription_entries_to_text(data) -> str:
+    """Render transcription records as speaker-prefixed plain text."""
+    if isinstance(data, dict):
+        for key in ('records', 'list', 'rows', 'items', 'segments'):
+            value = data.get(key)
+            if isinstance(value, list):
+                data = value
+                break
+    if not isinstance(data, list):
+        return str(data or '')
+
+    lines = []
+    for entry in data:
+        if not isinstance(entry, dict):
+            continue
+        text = str(entry.get('text') or entry.get('content') or '').strip()
+        if not text:
+            continue
+        speaker = entry.get('speakerName') or entry.get('speaker') or ''
+        if not speaker:
+            speaker_id = entry.get('speakerId')
+            speaker = f"Speaker {speaker_id}" if speaker_id is not None else ''
+        prefix = _format_transcription_timestamp(entry)
+        speaker_text = f"{speaker}: {text}" if speaker else text
+        lines.append(f"{prefix} {speaker_text}" if prefix else speaker_text)
+    return '\n'.join(lines)
+
+
+def _format_transcription_timestamp(entry: dict) -> str:
+    start = _first_present(entry, ('beginTime', 'startTime', 'timestamp', 'time'))
+    end = _first_present(entry, ('endTime', 'stopTime'))
+    if start in (None, ''):
+        return ''
+    start_text = _format_transcription_time_value(start)
+    if end not in (None, ''):
+        return f"[{start_text}-{_format_transcription_time_value(end)}]"
+    return f"[{start_text}]"
+
+
+def _first_present(data: dict, keys: tuple):
+    for key in keys:
+        if key in data and data.get(key) not in (None, ''):
+            return data.get(key)
+    return None
+
+
+def _format_transcription_time_value(value) -> str:
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        total_ms = int(round(float(value)))
+        minutes, rem_ms = divmod(total_ms, 60000)
+        seconds, millis = divmod(rem_ms, 1000)
+        return f"{minutes:02d}:{seconds:02d}.{millis:03d}"
+    return str(value).strip()
 
 
 def _handle_delete_todos(api, args: list):
@@ -702,6 +760,8 @@ def _format_text(result: dict, command: str) -> str:
                     lines.append(f'{speaker}: {text}')
             return '\n'.join(lines) if lines else str(data)
         return str(data)
+    if command == 'getTranscriptionText':
+        return str(data or '')
     if command == 'getOutline':
         return str(data) if data else 'No outline available.'
     if command == 'getFileInfo':
@@ -1867,6 +1927,16 @@ class LynseAPI:
         return self._request('GET', '/api/business/file/trans/get',
                             params={'fileId': safe_id})
 
+    def get_transcription_text(self, file_id: str) -> Dict[str, Any]:
+        """获取会议转写文本，不读取 AI 总结。"""
+        response = self.get_transcription_record(file_id)
+        data = response.get('data') if isinstance(response, dict) else response
+        return {
+            'code': response.get('code', 200) if isinstance(response, dict) else 200,
+            'msg': response.get('msg', response.get('message', 'SUCCESS')) if isinstance(response, dict) else 'SUCCESS',
+            'data': _transcription_entries_to_text(data),
+        }
+
     def list_transcription_record(self, task_id: str, *, team_id: str = '', file_id: str = '') -> Dict[str, Any]:
         """按 taskId 拉取转写记录。"""
         params = {
@@ -2048,6 +2118,7 @@ def _print_help():
             ("meetings range <start> <end>", "List meetings in a date range (YYYY-MM-DD)"),
             ("meetings search <keyword>", "Search meetings by title"),
             ("meetings transcript <id>", "Get meeting transcription"),
+            ("meetings transcript-text <id>", "Get meeting transcription text"),
             ("meetings summary <id>", "Get AI summary"),
             ("meetings outline <id>", "Get meeting outline"),
             ("meetings info <id>", "Get meeting details"),

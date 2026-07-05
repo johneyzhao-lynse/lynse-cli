@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.4 (2026-07-05)
+
+### New Features
+
+- Add `meetings transcript-text <id>` to fetch meeting transcription text from the transcription endpoint, including speaker labels and timestamps.
+
+### Changed
+
+- Keep transcription text separate from AI summaries by routing through `getTranscriptionRecord` instead of conclusion APIs.
+- Document `getTranscriptionText` under file read permissions.
+
 ## 1.6.3 (2026-06-29)
 
 ### Changed

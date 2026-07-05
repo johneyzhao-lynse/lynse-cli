@@ -172,6 +172,10 @@ class LynseUnifiedCLI:
                 if not args:
                     print("Error: getTranscriptionRecord requires a file ID", file=sys.stderr); return EXIT_INVALID
                 result = self.api.get_transcription_record(args[0])
+            elif command == 'getTranscriptionText':
+                if not args:
+                    print("Error: getTranscriptionText requires a file ID", file=sys.stderr); return EXIT_INVALID
+                result = self.api.get_transcription_text(args[0])
             elif command == 'renameSpeaker':
                 if not args:
                     print("Error: renameSpeaker requires JSON data", file=sys.stderr); return EXIT_INVALID
@@ -306,7 +310,7 @@ class LynseUnifiedCLI:
             'listFilesByMonth', 'listFilesByWeek', 'listFilesByRange',
             'listTodos', 'listAllTodos', 'deleteTodos', 'clearCompletedTodos',
             'getFileInfo', 'getConclusion', 'getOutline', 'exportOutline',
-            'getTranscriptionRecord', 'renameSpeaker', 'editSpeakerInfo',
+            'getTranscriptionRecord', 'getTranscriptionText', 'renameSpeaker', 'editSpeakerInfo',
             'listFolders', 'createFolder', 'changeFolder',
             'getAiModels', 'addModel', 'deleteModel', 'editModel', 'enableModel',
             'getMyDevices', 'getDevicePage', 'getDeviceInfo', 'unbindDevice',

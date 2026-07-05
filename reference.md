@@ -6,7 +6,7 @@
 |-------|-------------|----------|
 | `customer.read` | Read user info | getCurrentCustomer, getUserInfo, refreshMembership |
 | `customer.write` | Edit users | addUser, editUser, removeUser |
-| `file.read` | Read files/transcriptions/summaries | listFiles, getFileInfo, getConclusion, getOutline |
+| `file.read` | Read files/transcriptions/summaries | listFiles, getFileInfo, getTranscriptionRecord, getTranscriptionText, getConclusion, getOutline |
 | `file.write` | Edit file content | editConclusion, editOutline, editTransRecord |
 | `device.read` | Read device info | getMyDevices, getDeviceInfo, getDevicePage |
 | `device.manage` | Manage devices | unbindDevice |

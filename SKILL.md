@@ -13,7 +13,7 @@ description: >
   总结, 待办, 设备, 模型, 积分, 文件.
   Do NOT use for: generic calendar apps, Zoom/Teams recordings unrelated to Lynse, local file
   system operations, or other platforms that merely share these common words.
-version: 1.6.3
+version: 1.6.4
 metadata:
   openclaw:
     requires:
@@ -71,6 +71,7 @@ python3 lynse.py meetings week <YYYY-Wnn>              # Meetings in a specific 
 python3 lynse.py meetings range <start> <end>          # Meetings in a date range (YYYY-MM-DD)
 python3 lynse.py meetings search <keyword>             # Search by title
 python3 lynse.py meetings transcript <id>              # Get transcription
+python3 lynse.py meetings transcript-text <id>         # Get transcription text
 python3 lynse.py meetings summary <id>                 # Get AI summary
 python3 lynse.py meetings outline <id>                 # Get outline
 python3 lynse.py meetings info <id>                    # Meeting details
