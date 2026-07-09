@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.5 (unreleased)
+
+### Fixed
+
+- `_format_table` no longer truncates the ID column to 40 chars. Meeting/file IDs are longer than 40 chars, so the previous `str(v)[:40]` cut silently dropped trailing characters and broke downstream `meetings summary/transcript/outline/info` lookups when the ID was copied from the table. The ID column now stays full; other wide columns still truncate but keep an explicit `...` marker (see `tests/test_format_table.py`).
+
 ## 1.6.4 (2026-07-05)
 
 ### New Features

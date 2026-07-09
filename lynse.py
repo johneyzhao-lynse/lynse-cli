@@ -844,17 +844,28 @@ def _format_table(result: dict, command: str) -> str:
     headers = [c[0] for c in columns]
     keys = [c[1] for c in columns]
     rows = []
+    # 列宽上限：ID 列不截断（下游 summary/transcript/outline/info 需要完整可复制的 ID），
+    # 其余列超长时截断并加省略号，避免静默丢失信息。
+    col_limit = {}
+    for j, h in enumerate(headers):
+        col_limit[j] = 0 if h == 'ID' else 40
     for item in items:
         if not isinstance(item, dict):
             continue
         row = []
-        for k in keys:
+        for j, k in enumerate(keys):
             v = item.get(k, '')
             if k == 'isCompleted':
                 v = '✓' if v else '○'
             elif k == 'enabled':
                 v = '✓' if v else '✗'
-            row.append(str(v)[:40])
+            else:
+                s = str(v)
+                limit = col_limit.get(j, 40)
+                if limit and len(s) > limit:
+                    s = s[:limit - 3] + '...'
+                v = s
+            row.append(str(v))
         rows.append(row)
     widths = [len(h) for h in headers]
     for row in rows:
