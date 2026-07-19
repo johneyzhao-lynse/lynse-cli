@@ -8,26 +8,44 @@ const userArgs = process.argv.slice(2);
 
 const candidates = process.platform === "win32"
   ? [
-      { command: "python", args: [lynsePy, ...userArgs] },
-      { command: "py", args: ["-3", lynsePy, ...userArgs] },
-      { command: "python3", args: [lynsePy, ...userArgs] },
+      { command: "python", prefixArgs: [] },
+      { command: "py", prefixArgs: ["-3"] },
+      { command: "python3", prefixArgs: [] },
     ]
   : [
-      { command: "python3", args: [lynsePy, ...userArgs] },
-      { command: "python", args: [lynsePy, ...userArgs] },
+      { command: "python3", prefixArgs: [] },
+      { command: "python", prefixArgs: [] },
     ];
 
 for (const candidate of candidates) {
-  const result = spawnSync(candidate.command, candidate.args, { stdio: "inherit" });
+  const versionCheck = spawnSync(
+    candidate.command,
+    [
+      ...candidate.prefixArgs,
+      "-c",
+      "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)",
+    ],
+    { stdio: "ignore" },
+  );
 
-  if (result.error && result.error.code === "ENOENT") {
+  if (versionCheck.error && versionCheck.error.code === "ENOENT") {
     continue;
   }
 
-  if (result.error) {
-    console.error(`Error: failed to run ${candidate.command}: ${result.error.message}`);
+  if (versionCheck.error) {
+    console.error(`Error: failed to run ${candidate.command}: ${versionCheck.error.message}`);
     process.exit(1);
   }
+
+  if (versionCheck.status !== 0) {
+    continue;
+  }
+
+  const result = spawnSync(
+    candidate.command,
+    [...candidate.prefixArgs, lynsePy, ...userArgs],
+    { stdio: "inherit" },
+  );
 
   if (result.signal) {
     process.kill(process.pid, result.signal);
@@ -36,5 +54,5 @@ for (const candidate of candidates) {
   process.exit(result.status ?? 0);
 }
 
-console.error("Error: Python 3.8+ was not found. Install Python, then retry.");
+console.error("Error: Python 3.11+ was not found. Install Python, then retry.");
 process.exit(1);

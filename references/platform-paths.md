@@ -2,6 +2,7 @@
 
 The skill ships the same way into every AI assistant; only the install directory differs.
 `install.sh` / `install.ps1` auto-detects the environment and copies files to the right place.
+Python 3.11 or newer is required in every environment.
 
 ## Skill Install Directories
 

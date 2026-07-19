@@ -1,5 +1,7 @@
 # Lynse CLI Installation Guide
 
+Requires Python 3.11 or newer on Windows, macOS, and Linux.
+
 ## Auto Install (Recommended)
 
 ```bash

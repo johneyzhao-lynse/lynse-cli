@@ -62,24 +62,20 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1" >&2
 }
 
-# 检测可用的 Python 3 解释器（python3 优先，回退 python）
+# 检测可用的 Python 3.11+ 解释器（python3 优先，回退 python）
 # 检测结果写入全局变量 PYTHON_BIN，供安装提示使用
 detect_python() {
-    if command -v python3 &> /dev/null; then
-        PYTHON_BIN="python3"
-    elif command -v python &> /dev/null; then
-        # macOS/Linux 上 "python" 可能指向 python2，校验主版本
-        if python -c 'import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1)' 2>/dev/null; then
-            PYTHON_BIN="python"
-        else
-            PYTHON_BIN=""
+    PYTHON_BIN=""
+    for candidate in python3 python; do
+        if command -v "$candidate" &> /dev/null && \
+            "$candidate" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
+            PYTHON_BIN="$candidate"
+            break
         fi
-    else
-        PYTHON_BIN=""
-    fi
+    done
 
     if [ -z "$PYTHON_BIN" ]; then
-        log_error "未检测到 Python 3。请安装 Python 3.8+：https://www.python.org/downloads/"
+        log_error "未检测到 Python 3.11+。请安装 Python 3.11 或更高版本：https://www.python.org/downloads/"
         return 1
     fi
 

@@ -27,6 +27,17 @@ import time
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Union
 
+MIN_PYTHON_VERSION = (3, 11)
+MIN_PYTHON_VERSION_TEXT = '.'.join(str(part) for part in MIN_PYTHON_VERSION)
+
+if sys.version_info < MIN_PYTHON_VERSION:
+    print(
+        f"Error: lynse-cli requires Python {MIN_PYTHON_VERSION_TEXT} or newer "
+        f"(found {platform.python_version()}).",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+
 warnings.filterwarnings(
     "ignore",
     message=r"urllib3 v2 only supports OpenSSL 1\.1\.1\+",
@@ -59,7 +70,7 @@ def _lynse_log_ts() -> str:
 
 
 # CLI 版本
-CLI_VERSION = '1.6.4'
+CLI_VERSION = '1.6.5'
 
 # 语义化退出码
 EXIT_SUCCESS = 0
@@ -2391,8 +2402,8 @@ def main():
             print("Running diagnostics...\n", file=sys.stderr)
             import platform as _plat
             py_ver = _plat.python_version()
-            py_ok = tuple(int(x) for x in py_ver.split('.')[:2]) >= (3, 8)
-            _check('Python >= 3.8', py_ok, py_ver)
+            py_ok = sys.version_info >= MIN_PYTHON_VERSION
+            _check(f'Python >= {MIN_PYTHON_VERSION_TEXT}', py_ok, py_ver)
             try:
                 import requests as _req
                 _check('requests installed', True, getattr(_req, '__version__', 'unknown'))

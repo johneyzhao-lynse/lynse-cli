@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SkillName = "lynse-cli"
+$script:PythonArgs = @()
 
 # 颜色输出函数
 function Write-Info { Write-Host "[INFO] $args" -ForegroundColor Blue }
@@ -24,8 +25,9 @@ function Check-Python {
             $version = python --version 2>&1
             if ($version -match "Python 3\.(\d+)") {
                 $minor = [int]$matches[1]
-                if ($minor -ge 8) {
+                if ($minor -ge 11) {
                     $script:PythonCmd = "python"
+                    $script:PythonArgs = @()
                     Write-Info "检测到 Python: $version"
                     return
                 }
@@ -40,8 +42,9 @@ function Check-Python {
             $version = python3 --version 2>&1
             if ($version -match "Python 3\.(\d+)") {
                 $minor = [int]$matches[1]
-                if ($minor -ge 8) {
+                if ($minor -ge 11) {
                     $script:PythonCmd = "python3"
+                    $script:PythonArgs = @()
                     Write-Info "检测到 Python: $version"
                     return
                 }
@@ -56,8 +59,9 @@ function Check-Python {
             $version = py -3 --version 2>&1
             if ($version -match "Python 3\.(\d+)") {
                 $minor = [int]$matches[1]
-                if ($minor -ge 8) {
-                    $script:PythonCmd = "py -3"
+                if ($minor -ge 11) {
+                    $script:PythonCmd = "py"
+                    $script:PythonArgs = @("-3")
                     Write-Info "检测到 Python: $version"
                     return
                 }
@@ -65,9 +69,9 @@ function Check-Python {
         }
     } catch {}
 
-    Write-Error "未找到 Python 或版本过低 (需要 Python 3.8+)"
+    Write-Error "未找到 Python 或版本过低 (需要 Python 3.11+)"
     Write-Host ""
-    Write-Host "请安装 Python 3.8+: https://www.python.org/downloads/"
+    Write-Host "请安装 Python 3.11+: https://www.python.org/downloads/"
     Write-Host "安装时请勾选 'Add Python to PATH'"
     exit 1
 }
@@ -78,7 +82,8 @@ function Install-Dependencies {
 
     $requirementsPath = Join-Path $ScriptDir "requirements.txt"
     if (Test-Path $requirementsPath) {
-        & $script:PythonCmd -m pip install -q -r $requirementsPath
+        $pythonArgs = @($script:PythonArgs) + @("-m", "pip", "install", "-q", "-r", $requirementsPath)
+        & $script:PythonCmd @pythonArgs
         Write-Success "依赖安装完成"
     }
 }

@@ -1,10 +1,15 @@
 # Changelog
 
-## 1.6.5 (unreleased)
+## 1.6.5 (2026-07-19)
 
-### Fixed
+### Bug Fixes
 
 - `_format_table` no longer truncates the ID column to 40 chars. Meeting/file IDs are longer than 40 chars, so the previous `str(v)[:40]` cut silently dropped trailing characters and broke downstream `meetings summary/transcript/outline/info` lookups when the ID was copied from the table. The ID column now stays full; other wide columns still truncate but keep an explicit `...` marker (see `tests/test_format_table.py`).
+
+### Changed
+
+- Raise the minimum supported Python version from 3.8 to 3.11 across the CLI, installers, npm wrapper, and skill documentation.
+- Add automated test coverage for Python 3.11 through 3.14.
 
 ## 1.6.4 (2026-07-05)
 

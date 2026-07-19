@@ -13,7 +13,7 @@ description: >
   总结, 待办, 设备, 模型, 积分, 文件.
   Do NOT use for: generic calendar apps, Zoom/Teams recordings unrelated to Lynse, local file
   system operations, or other platforms that merely share these common words.
-version: 1.6.4
+version: 1.6.5
 metadata:
   openclaw:
     requires:
@@ -33,7 +33,7 @@ metadata:
 
 # Lynse CLI Skill
 
-Cross-platform Python CLI (3.8+) for lynse.ai backend services. Works natively on Windows / macOS / Linux.
+Cross-platform Python CLI (3.11+) for lynse.ai backend services. Works natively on Windows / macOS / Linux.
 
 ## How to Invoke
 
