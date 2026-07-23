@@ -26,6 +26,7 @@ import platform
 import time
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Union
+from urllib.parse import urlsplit
 
 MIN_PYTHON_VERSION = (3, 11)
 MIN_PYTHON_VERSION_TEXT = '.'.join(str(part) for part in MIN_PYTHON_VERSION)
@@ -70,7 +71,7 @@ def _lynse_log_ts() -> str:
 
 
 # CLI 版本
-CLI_VERSION = '1.6.5'
+CLI_VERSION = '1.6.6'
 
 # 语义化退出码
 EXIT_SUCCESS = 0
@@ -1131,36 +1132,26 @@ class LynseAPI:
 
     @staticmethod
     def _lynse_debug_enabled() -> bool:
-        try:
-            from runtime.log_config import enabled_log_categories, is_log_enabled
-
-            if enabled_log_categories():
-                return is_log_enabled("lynse")
-        except Exception:
-            pass
-        for key in ("LYNSE_HTTP_DEBUG", "LYNCLAW_HTTP_DEBUG"):
-            if os.environ.get(key, "").strip().lower() in ("1", "true", "yes"):
-                return True
-        return False
-
-    @staticmethod
-    def _lynse_debug_log_token() -> bool:
-        for key in ("LYNSE_HTTP_DEBUG_LOG_TOKEN", "LYNCLAW_HTTP_DEBUG_LOG_TOKEN"):
-            if os.environ.get(key, "").strip().lower() in ("1", "true", "yes"):
-                return True
-        return False
+        return os.environ.get("LYNSE_HTTP_DEBUG", "").strip().lower() in ("1", "true", "yes")
 
     def _mask_headers_for_log(self, headers: Dict[str, str]) -> Dict[str, str]:
         safe = dict(headers)
-        if self._lynse_debug_log_token():
-            return safe
         for key in list(safe.keys()):
-            lowered = key.lower()
-            if lowered in ("authorization", "x-api-key"):
-                value = str(safe[key])
-                if len(value) > 24:
-                    safe[key] = f"{value[:16]}...{value[-8:]} (len={len(value)})"
+            if key.lower() in ("authorization", "x-api-key"):
+                safe[key] = "[REDACTED]"
         return safe
+
+    @staticmethod
+    def _destination_for_log(url: str) -> str:
+        """Return only the request origin, never a path, query, or user info."""
+        try:
+            parsed = urlsplit(url)
+            if not parsed.scheme or not parsed.hostname:
+                return "[invalid URL]"
+            port = f":{parsed.port}" if parsed.port else ""
+            return f"{parsed.scheme}://{parsed.hostname}{port}"
+        except ValueError:
+            return "[invalid URL]"
 
     def _log_lynse_request(
         self,
@@ -1174,18 +1165,13 @@ class LynseAPI:
     ) -> None:
         if not self._lynse_debug_enabled():
             return
-        body_preview = None
-        if json_data is not None:
-            body_preview = json.dumps(json_data, ensure_ascii=False, default=str)
-            if len(body_preview) > 2000:
-                body_preview = body_preview[:2000] + f"...(truncated, total {len(body_preview)} chars)"
         payload = {
             "note": note or None,
             "method": method,
-            "url": url,
+            "destination": self._destination_for_log(url),
             "headers": self._mask_headers_for_log(headers),
-            "params": params or None,
-            "json_body": body_preview,
+            "param_names": sorted(str(key) for key in params) if params else None,
+            "json_fields": sorted(str(key) for key in json_data) if json_data else None,
             "http_injected_token": self._is_http_injected_token(
                 self._strip_bearer_prefix(headers.get("Authorization", ""))
             ),
@@ -1207,18 +1193,21 @@ class LynseAPI:
     ) -> None:
         if not self._lynse_debug_enabled():
             return
-        summary: Dict[str, Any] = {"method": method, "url": url, "http_status": status_code}
+        summary: Dict[str, Any] = {
+            "method": method,
+            "destination": self._destination_for_log(url),
+            "http_status": status_code,
+        }
         if isinstance(data, dict):
             summary["business_code"] = data.get("code")
-            summary["business_msg"] = data.get("message") or data.get("msg")
             if "data" in data:
                 inner = data.get("data")
                 if isinstance(inner, list):
                     summary["data_count"] = len(inner)
                 elif isinstance(inner, dict):
                     summary["data_keys"] = list(inner.keys())[:20]
-        if text_preview and not isinstance(data, dict):
-            summary["raw_preview"] = text_preview[:500]
+        elif text_preview:
+            summary["raw_length"] = len(text_preview)
         print(
             f"[{_lynse_log_ts()}] [lynse-cli] <<< response {json.dumps(summary, ensure_ascii=False)}",
             file=sys.stderr,
@@ -2355,7 +2344,8 @@ def main():
 
     if LynseAPI._lynse_debug_enabled():
         print(
-            f"[{_lynse_log_ts()}] [lynse-cli] invoke command={command} (alias={is_alias}) args={json.dumps(args, ensure_ascii=False)}",
+            f"[{_lynse_log_ts()}] [lynse-cli] invoke command={command} "
+            f"(alias={is_alias}) arg_count={len(args)}",
             file=sys.stderr, flush=True,
         )
 

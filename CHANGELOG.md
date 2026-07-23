@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.6 (2026-07-23)
+
+### Security
+
+- Permanently redact authentication headers and omit command arguments, query values, request bodies, response bodies, and server messages from HTTP debug logs.
+- Remove documentation that instructed users to persist aliases in shell startup files.
+
+### Changed
+
+- Build the WorkBuddy/SkillHub artifact from a strict six-file allowlist, excluding legacy shell clients, installers, tests, and npm-only documentation.
+- Declare the skill's network destination, data handling, trusted-host rule, and minimal Python tool permissions.
+
 ## 1.6.5 (2026-07-19)
 
 ### Bug Fixes

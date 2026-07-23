@@ -1,0 +1,26 @@
+# Keep the published agent skill minimal. These files support repository
+# development, npm installation, or legacy clients, but are not used by SKILL.md.
+.git/
+.github/
+.claude/
+.DS_Store
+.pytest_cache/
+__pycache__/
+tests/
+dist/
+
+CHANGELOG.md
+QUICKSTART.md
+README.md
+USAGE.md
+compatibility.md
+install-guide.md
+reference.md
+
+api_wrapper.sh
+install.ps1
+install.sh
+lynse_cli.py
+lynse_unified.sh
+lynse-cli-a/
+lynse-cli-b/

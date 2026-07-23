@@ -1,7 +1,8 @@
 # Platform Paths (AI Assistant Environments)
 
-The skill ships the same way into every AI assistant; only the install directory differs.
-`install.sh` / `install.ps1` auto-detects the environment and copies files to the right place.
+The skill runs the same way in every AI assistant; only the install directory differs. Registry
+installs place the minimal skill bundle directly into that directory. The standalone npm project
+has separate end-user installers, but an agent must not run an installer from inside this skill.
 Python 3.11 or newer is required in every environment.
 
 ## Skill Install Directories
@@ -22,7 +23,10 @@ python3 lynse.py <command> [args...]   # macOS / Linux
 python lynse.py <command> [args...]    # Windows (or: py -3 lynse.py)
 ```
 
-No single interpreter name works on every platform — modern macOS (Homebrew) and recent Ubuntu/Debian ship only `python3`, while Windows exposes `python` (not `python3`). Pick by environment; if unsure, run `<candidate> lynse.py version` and use whichever prints a version string. `install.sh` / `install.ps1` auto-detect the right one and print it at the end of installation.
+No single interpreter name works on every platform — modern macOS (Homebrew) and recent
+Ubuntu/Debian ship only `python3`, while Windows exposes `python` (not `python3`). Pick by
+environment; if unsure, run `<candidate> lynse.py version` and use whichever prints a version
+string.
 
 The other difference across environments is **how env vars reach the process**:
 

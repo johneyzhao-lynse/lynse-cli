@@ -1,6 +1,6 @@
 {
   "name": "@lynse.ai/lynse-cli",
-  "version": "1.6.5",
+  "version": "1.6.6",
   "description": "灵光记 / Lynse CLI 技能包 - 调用 lynse.ai 后端服务的 API，支持用户管理、文件管理、转写总结、待办整理、设备管理、AI 模型管理等功能。跨平台支持 Windows/macOS/Linux。",
   "main": "lynse.py",
   "bin": {
@@ -10,6 +10,7 @@
     "lynse-install-win": "./install.ps1"
   },
   "scripts": {
+    "pack:skill": "python3 scripts/build_skill_package.py",
     "test": "echo \"No tests configured\" && exit 0"
   },
   "keywords": [
@@ -44,6 +45,7 @@
     "lynse.py",
     "lynse_cli.py",
     "bin/lynse.js",
+    "scripts/build_skill_package.py",
     "requirements.txt",
     "install.sh",
     "install.ps1",

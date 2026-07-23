@@ -112,4 +112,6 @@ python lynse.py version     # fallback (Windows / older setups)
 The interpreter that prints a version string is the one to use.
 
 **Q: How do I make `python` point to Python 3 on macOS?**
-A: Optional. Either install the `python` symlink via Homebrew (`brew install python`), or add `alias python=python3` to `~/.zshrc`. Not required — `python3` works everywhere `python` does not.
+A: You do not need to. Run `python3 lynse.py ...` directly. The installer detects the
+available Python 3 command, and the npm package provides the `lynse` command without modifying
+shell startup files.
