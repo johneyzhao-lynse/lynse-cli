@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Split the MCP server into the separate `lynse-mcp` repository and remove MCP packaging entries from `lynse-cli`.
+
 ## 1.6.6 (2026-07-23)
 
 ### Security

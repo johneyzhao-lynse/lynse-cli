@@ -11,7 +11,7 @@
   },
   "scripts": {
     "pack:skill": "python3 scripts/build_skill_package.py",
-    "test": "echo \"No tests configured\" && exit 0"
+    "test": "python3 -m unittest discover -v"
   },
   "keywords": [
     "lynse",
@@ -26,7 +26,7 @@
     "cross-platform",
     "windows"
   ],
-  "author": "Lynse",
+  "author": "lynse.ai",
   "license": "MIT",
   "homepage": "https://www.lynse.ai",
   "repository": {
@@ -53,6 +53,9 @@
     "lynse_unified.sh",
     "lynse-cli-a/client.sh",
     "lynse-cli-b/client.sh",
+    "README.md",
+    "USAGE.md",
+    "QUICKSTART.md",
     "SKILL.md",
     "install-guide.md",
     "reference.md",

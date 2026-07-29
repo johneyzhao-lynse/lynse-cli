@@ -2338,7 +2338,12 @@ def main():
         _print_help()
         sys.exit(EXIT_SUCCESS)
 
-    # 2. 解析命令与别名
+    # 2. 帮助请求：--help/-h/help 直接打印帮助，不进入需要配置 host 的业务命令
+    if cli_args[0] in ('--help', '-h', 'help'):
+        _print_help()
+        sys.exit(EXIT_SUCCESS)
+
+    # 3. 解析命令与别名
     command, args, is_alias = _resolve_alias(cli_args[0], cli_args[1:])
     display_command = _ALIAS_INFO.get(command, command)
 
@@ -2350,7 +2355,7 @@ def main():
         )
 
     try:
-        # 3. 本地命令（不需要 API 实例）
+        # 4. 本地命令（不需要 API 实例）
         if command == '__version__':
             import platform as _plat
             req_ver = 'not installed'
@@ -2437,12 +2442,12 @@ def main():
             sys.exit(EXIT_SUCCESS if all_ok else EXIT_INVALID)
             return
 
-        # 4. Auth 子命令（单独处理，可能需要未完整配置的 API）
+        # 5. Auth 子命令（单独处理，可能需要未完整配置的 API）
         if command.startswith('__auth_'):
             _handle_auth_command(command, args, flags)
             return
 
-        # 5. 初始化 API 并执行业务命令
+        # 6. 初始化 API 并执行业务命令
         api = LynseAPI()
 
         if command in _ALIAS_HANDLERS:
