@@ -1,9 +1,17 @@
 # Changelog
 
-## Unreleased
+## 1.7.0 (2026-08-12)
+
+### New Features
+
+- Add `meetings audio <id>` and `LynseAPI.get_audio_file()` for presigned meeting audio metadata.
+- Add todo creation and rescheduling plus server-side folder counts and folder deletion.
+- Support injected access tokens, owner IDs, and HTTP clients for embedded consumers such as Lynclaw.
 
 ### Changed
 
+- Make `lynse-cli` pip-installable so Lynclaw and `lynse-mcp` can import the same `LynseAPI` implementation instead of maintaining copies.
+- Establish this repository as the single source of truth for the Lynse API client and CLI behavior.
 - Split the MCP server into the separate `lynse-mcp` repository and remove MCP packaging entries from `lynse-cli`.
 
 ## 1.6.6 (2026-07-23)

@@ -16,7 +16,7 @@ allowed-tools: Bash(python3:*), Bash(python:*), Bash(py:*)
 metadata:
   slug: lynse-cli
   displayName: 灵光记 / Lynse CLI
-  version: 1.6.6
+  version: 1.7.0
   openclaw:
     requires:
       env:
@@ -74,6 +74,7 @@ python3 lynse.py meetings range <start> <end>          # Meetings in a date rang
 python3 lynse.py meetings search <keyword>             # Search by title
 python3 lynse.py meetings transcript <id>              # Get transcription
 python3 lynse.py meetings transcript-text <id>         # Get transcription text
+python3 lynse.py meetings audio <id>                   # Get audio download metadata
 python3 lynse.py meetings summary <id>                 # Get AI summary
 python3 lynse.py meetings outline <id>                 # Get outline
 python3 lynse.py meetings info <id>                    # Meeting details
@@ -81,9 +82,13 @@ python3 lynse.py meetings organize [--days N] [--execute] [--yes]   # Auto-class
 python3 lynse.py folders list                          # List folders/groups
 python3 lynse.py folders create <json>                 # Create folder
 python3 lynse.py folders move <json>                   # Move files to folder
+python3 lynse.py folders count                         # Count files by folder
+python3 lynse.py folders delete <ids>                  # Delete folders
 python3 lynse.py todos list [all|open|done]            # List todos
 python3 lynse.py todos delete <ids>                    # Delete todos
 python3 lynse.py todos clear                           # Clear completed todos
+python3 lynse.py todos add <content> [owner] [deadline] # Create todo
+python3 lynse.py todos reschedule <id> <deadline>      # Change todo deadline
 python3 lynse.py devices list                          # List bound devices
 python3 lynse.py devices info <id>                     # Device details
 python3 lynse.py devices unbind <id>                   # Unbind device

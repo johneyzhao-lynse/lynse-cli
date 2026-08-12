@@ -34,6 +34,9 @@ npx skills add lynse-ai/lynse-cli
 # 或全局安装
 npm install -g @lynse.ai/lynse-cli
 
+# Python 项目复用同一 API 客户端
+python3 -m pip install "git+https://github.com/lynse-ai/lynse-cli.git@v1.7.0"
+
 # 或使用安装脚本
 # macOS/Linux
 ./install.sh
@@ -92,6 +95,7 @@ lynse meetings search 关键词          # 搜索会议
 lynse meetings summary <ID>            # 获取 AI 总结
 lynse meetings outline <ID>           # 获取会议大纲
 lynse meetings transcript <ID>        # 获取完整转写
+lynse meetings audio <ID>             # 获取音频下载信息
 ```
 
 ### 3. 自动整理
@@ -104,6 +108,8 @@ lynse meetings organize --execute      # 执行整理
 ```bash
 lynse todos list                       # 查看待办
 lynse todos clear                      # 清理已完成
+lynse todos add "整理复盘"             # 新增待办
+lynse todos reschedule <ID> 2026-08-15 # 调整截止时间
 ```
 
 ## 🔧 系统要求

@@ -15,6 +15,7 @@ Lynse CLI - 核心 API 封装模块
 """
 
 import base64
+import mimetypes
 import os
 import sys
 import json
@@ -71,7 +72,7 @@ def _lynse_log_ts() -> str:
 
 
 # CLI 版本
-CLI_VERSION = '1.6.6'
+CLI_VERSION = '1.7.0'
 
 # 语义化退出码
 EXIT_SUCCESS = 0
@@ -124,6 +125,7 @@ _SUBCOMMAND_ALIASES = {
         'search': 'searchFiles',
         'transcript': 'getTranscriptionRecord',
         'transcript-text': 'getTranscriptionText',
+        'audio': 'getAudioFile',
         'summary': 'getConclusion',
         'info': 'getFileInfo',
         'outline': 'getOutline',
@@ -133,11 +135,15 @@ _SUBCOMMAND_ALIASES = {
         'list': 'listFolders',
         'move': 'changeFolder',
         'create': 'createFolder',
+        'count': 'countByCategory',
+        'delete': 'deleteFolders',
     },
     'todos': {
         'list': 'listTodos',
         'clear': 'clearCompletedTodos',
         'delete': 'deleteTodos',
+        'add': 'addTodo',
+        'reschedule': 'rescheduleTodo',
     },
     'devices': {
         'list': 'getMyDevices',
@@ -167,6 +173,7 @@ _ALIAS_HANDLERS = {
     'searchFiles': lambda api, a: api.search_files(a[0], **_extract_page_kwargs(a[1:])) if a else _missing_arg('search keyword'),
     'getTranscriptionRecord': lambda api, a: api.get_transcription_record(a[0]) if a else _missing_arg('file ID'),
     'getTranscriptionText': lambda api, a: api.get_transcription_text(a[0]) if a else _missing_arg('file ID'),
+    'getAudioFile': lambda api, a: api.get_audio_file(a[0]) if a else _missing_arg('file ID'),
     'getConclusion': lambda api, a: api.get_conclusion(a[0]) if a else _missing_arg('file ID'),
     'getFileInfo': lambda api, a: api.get_file_info(a[0]) if a else _missing_arg('file ID'),
     'getOutline': lambda api, a: api.get_outline(a[0]) if a else _missing_arg('file ID'),
@@ -174,9 +181,16 @@ _ALIAS_HANDLERS = {
     'listFolders': lambda api, a: api.list_folders(),
     'changeFolder': lambda api, a: api.change_folder(json.loads(a[0])) if a else _missing_arg('JSON payload'),
     'createFolder': lambda api, a: api.create_folder(json.loads(a[0])) if a else _missing_arg('JSON data'),
+    'countByCategory': lambda api, a: api.count_files_by_folder(),
+    'deleteFolders': lambda api, a: _handle_delete_folders(api, a),
     'listTodos': lambda api, a: api.list_todos(status=(a[0] if a else 'all'), page_num=int(a[1]) if len(a) > 1 else 1, page_size=int(a[2]) if len(a) > 2 else 20),
     'clearCompletedTodos': lambda api, a: api.clear_completed_todos(),
     'deleteTodos': lambda api, a: _handle_delete_todos(api, a),
+    'addTodo': lambda api, a: api.add_todo(
+        a[0], owner=a[1] if len(a) > 1 else '', deadline=a[2] if len(a) > 2 else ''
+    ) if a else _missing_arg('todo content'),
+    'rescheduleTodo': lambda api, a: api.reschedule_todo(a[0], a[1])
+    if len(a) >= 2 else _missing_arg('todo ID and new deadline'),
     'getMyDevices': lambda api, a: api.get_my_devices(),
     'getDeviceInfo': lambda api, a: api.get_device_info(a[0]) if a else _missing_arg('device ID'),
     'unbindDevice': lambda api, a: api.unbind_device(a[0]) if a else _missing_arg('device ID'),
@@ -196,6 +210,7 @@ _ALIAS_INFO = {
     'searchFiles': 'meetings search',
     'getTranscriptionRecord': 'meetings transcript',
     'getTranscriptionText': 'meetings transcript-text',
+    'getAudioFile': 'meetings audio',
     'getConclusion': 'meetings summary',
     'getFileInfo': 'meetings info',
     'getOutline': 'meetings outline',
@@ -203,9 +218,13 @@ _ALIAS_INFO = {
     'listFolders': 'folders list',
     'changeFolder': 'folders move',
     'createFolder': 'folders create',
+    'countByCategory': 'folders count',
+    'deleteFolders': 'folders delete',
     'listTodos': 'todos list',
     'clearCompletedTodos': 'todos clear',
     'deleteTodos': 'todos delete',
+    'addTodo': 'todos add',
+    'rescheduleTodo': 'todos reschedule',
     'getMyDevices': 'devices list',
     'getDeviceInfo': 'devices info',
     'unbindDevice': 'devices unbind',
@@ -351,6 +370,20 @@ def _handle_delete_todos(api, args: list):
     except json.JSONDecodeError:
         todo_ids = [item.strip() for item in raw_ids.split(',') if item.strip()]
     return api.delete_todos([str(item) for item in todo_ids])
+
+
+def _handle_delete_folders(api, args: list):
+    """Handle folder IDs passed as a JSON array or comma-separated values."""
+    if not args:
+        print("Error: missing folder IDs", file=sys.stderr)
+        sys.exit(EXIT_INVALID)
+    raw_ids = " ".join(args).strip()
+    try:
+        parsed = json.loads(raw_ids)
+        folder_ids = parsed if isinstance(parsed, list) else [parsed]
+    except json.JSONDecodeError:
+        folder_ids = [item.strip() for item in raw_ids.split(',') if item.strip()]
+    return api.delete_folders([str(item) for item in folder_ids])
 
 
 def _parse_month_args(args: list):
@@ -1026,7 +1059,15 @@ class LynseAPI:
         503: "Server temporarily unavailable. Please try again later.",
     }
 
-    def __init__(self, api_host: str = None, api_key: str = None, config_file: str = None):
+    def __init__(
+        self,
+        api_host: str = None,
+        api_key: str = None,
+        config_file: str = None,
+        access_token: str = None,
+        owner_id: str = None,
+        http_client=None,
+    ):
         """
         初始化 API 客户端
 
@@ -1043,7 +1084,11 @@ class LynseAPI:
             install_env_path=config_file,
             user_config=self._user_config,
         )
-        self.owner_id = os.environ.get('LYNSE_OWNER_ID')
+        self.owner_id = owner_id or os.environ.get('LYNSE_OWNER_ID')
+        self._forced_access_token = (access_token or "").strip()
+        if self._forced_access_token and api_key is None:
+            # Request-scoped tokens must not inherit and transmit a saved user API key.
+            self.api_key = ""
 
         # 3. 验证配置
         if not self.api_host:
@@ -1052,7 +1097,7 @@ class LynseAPI:
                 "Run 'lynse auth login --api-key <key> --host <url>' or set it in .env"
             )
         if not self.api_key:
-            if not os.environ.get("LYNSE_ACCESS_TOKEN", "").strip():
+            if not self._forced_access_token and not os.environ.get("LYNSE_ACCESS_TOKEN", "").strip():
                 raise LynseAPIError(
                     "LYNSE_API_KEY is not configured.\n"
                     "Run 'lynse auth login --api-key <key>' or set it in .env"
@@ -1071,6 +1116,7 @@ class LynseAPI:
             else:
                 self.token_file = user_token
         self._access_token: Optional[str] = None
+        self._http = http_client or requests
 
     def _load_config(self, config_file: str = None):
         """从 .env 文件加载配置（委托给模块级 _load_install_env，保留向后兼容）。"""
@@ -1092,7 +1138,9 @@ class LynseAPI:
 
     def _is_http_injected_token(self, token: str) -> bool:
         """HTTP 请求体注入的 accessToken（无 TUI 式 dk_ API Key）。"""
-        forced = (os.environ.get("LYNSE_ACCESS_TOKEN") or "").strip()
+        forced = getattr(self, "_forced_access_token", "") or (
+            os.environ.get("LYNSE_ACCESS_TOKEN") or ""
+        ).strip()
         if not forced:
             return False
         return self._strip_bearer_prefix(forced) == self._strip_bearer_prefix(token)
@@ -1104,7 +1152,7 @@ class LynseAPI:
 
     def _resolve_x_api_key(self, token: str) -> str:
         """TUI 路径带 X-API-Key；HTTP 仅 token 时不发（服务端确认可省略）。"""
-        if self._is_http_injected_token(token) and not self.api_key:
+        if self._is_http_injected_token(token):
             return ""
         if self.api_key:
             return self.api_key
@@ -1132,7 +1180,10 @@ class LynseAPI:
 
     @staticmethod
     def _lynse_debug_enabled() -> bool:
-        return os.environ.get("LYNSE_HTTP_DEBUG", "").strip().lower() in ("1", "true", "yes")
+        return any(
+            os.environ.get(key, "").strip().lower() in ("1", "true", "yes")
+            for key in ("LYNSE_HTTP_DEBUG", "LYNCLAW_HTTP_DEBUG")
+        )
 
     def _mask_headers_for_log(self, headers: Dict[str, str]) -> Dict[str, str]:
         safe = dict(headers)
@@ -1272,7 +1323,9 @@ class LynseAPI:
                 note=f"exchange_token attempt {attempt}/{max_attempts}",
             )
             try:
-                response = requests.post(url, headers=headers, timeout=30)
+                response = getattr(self, "_http", requests).post(
+                    url, headers=headers, timeout=30
+                )
             except requests.RequestException as e:
                 if attempt < max_attempts:
                     time.sleep(0.5 * attempt)
@@ -1328,11 +1381,15 @@ class LynseAPI:
 
     def _get_token(self, refresh: bool = False) -> str:
         """获取有效 Token，支持自动刷新"""
-        forced = (os.environ.get("LYNSE_ACCESS_TOKEN") or "").strip()
+        forced = getattr(self, "_forced_access_token", "") or (
+            os.environ.get("LYNSE_ACCESS_TOKEN") or ""
+        ).strip()
         if forced and not refresh:
             if self._validate_token(forced):
                 self._access_token = forced
                 return forced
+        if not refresh and self._access_token and self._validate_token(self._access_token):
+            return self._access_token
 
         if not refresh:
             cached = self._get_cached_token()
@@ -1341,7 +1398,9 @@ class LynseAPI:
                 try:
                     test_url = f"{self.api_host}/api/business/customer/current"
                     test_headers = self._build_auth_headers(cached)
-                    test_response = requests.get(test_url, headers=test_headers, timeout=10)
+                    test_response = getattr(self, "_http", requests).get(
+                        test_url, headers=test_headers, timeout=10
+                    )
                     if test_response.status_code == 200:
                         try:
                             test_data = test_response.json()
@@ -1380,7 +1439,9 @@ class LynseAPI:
         try:
             url = f"{self.api_host}/api/business/customer/current"
             headers = self._build_auth_headers(token)
-            response = requests.get(url, headers=headers, timeout=10)
+            response = getattr(self, "_http", requests).get(
+                url, headers=headers, timeout=10
+            )
             if response.status_code == 200:
                 data = response.json()
                 data_payload = data.get('data') if isinstance(data, dict) else None
@@ -1446,7 +1507,7 @@ class LynseAPI:
         )
 
         try:
-            response = requests.request(
+            response = getattr(self, "_http", requests).request(
                 method,
                 url,
                 headers=request_headers,
@@ -1660,6 +1721,71 @@ class LynseAPI:
         return self._request('GET', '/api/business/file/info',
                             params={'fileId': safe_id})
 
+    def get_audio_file(self, file_id: str) -> Dict[str, Any]:
+        """Return a meeting audio download URL and normalized file metadata."""
+        safe_id = self._sanitize_param(file_id, 'safe')
+        info_response = self.get_file_info(safe_id)
+        info = info_response.get('data') if isinstance(info_response, dict) else {}
+        info = info if isinstance(info, dict) else {}
+        download_response = self._request(
+            'GET',
+            '/api/business/file/presign/download',
+            params={'fileId': safe_id},
+        )
+        download_data = (
+            download_response.get('data')
+            if isinstance(download_response, dict)
+            else download_response
+        )
+        if isinstance(download_data, dict):
+            download_url = download_data.get('url')
+        else:
+            download_url = download_data
+        download_url = str(download_url or info.get('url') or '').strip()
+        try:
+            parsed_url = urlsplit(download_url)
+        except ValueError:
+            parsed_url = None
+        if not parsed_url or parsed_url.scheme not in ('http', 'https') or not parsed_url.netloc:
+            raise LynseAPIError(
+                'Lynse did not return a valid audio download URL. '
+                'The recording may still be processing or unavailable.'
+            )
+
+        file_name = str(
+            info.get('originalFilename') or info.get('filename') or f'{safe_id}.audio'
+        ).strip()
+        mime_type = str(info.get('contentType') or '').strip().lower()
+        if not mime_type:
+            mime_type = (
+                mimetypes.guess_type(file_name)[0]
+                or mimetypes.guess_type(parsed_url.path)[0]
+                or 'application/octet-stream'
+            )
+        raw_size = info.get('size')
+        try:
+            size = max(0, int(raw_size)) if raw_size not in (None, '') else None
+        except (TypeError, ValueError):
+            size = None
+
+        return {
+            'code': download_response.get('code', 200)
+            if isinstance(download_response, dict)
+            else 200,
+            'msg': download_response.get(
+                'msg', download_response.get('message', 'SUCCESS')
+            )
+            if isinstance(download_response, dict)
+            else 'SUCCESS',
+            'data': {
+                'fileId': safe_id,
+                'fileName': file_name,
+                'mimeType': mime_type,
+                'size': size,
+                'url': download_url,
+            },
+        }
+
     def get_conclusion(self, file_id: str) -> Dict[str, Any]:
         """获取文件总结"""
         safe_id = self._sanitize_param(file_id, 'safe')
@@ -1704,6 +1830,38 @@ class LynseAPI:
     def clear_completed_todos(self) -> Dict[str, Any]:
         """清理已完成待办。"""
         return self._request('POST', '/api/business/file/todo/clear', json_data={})
+
+    def reschedule_todo(self, todo_id: str, new_deadline: str) -> Dict[str, Any]:
+        """Update the expected completion time for one todo."""
+        safe_id = self._sanitize_param(str(todo_id or "").strip(), 'safe')
+        new_deadline = str(new_deadline or "").strip()
+        if not safe_id:
+            raise LynseAPIError('Missing todoId; cannot reschedule the todo.')
+        body = {
+            "todoUpdateList": [
+                {
+                    "todoId": safe_id,
+                    "expectedCompleteTime": new_deadline,
+                }
+            ]
+        }
+        return self._request('POST', '/api/business/file/todo/update', json_data=body)
+
+    def add_todo(self, content: str, *, owner: str = "", deadline: str = "") -> Dict[str, Any]:
+        """Create a todo through the shared todo update endpoint."""
+        safe_content = self._sanitize_param(str(content or "").strip(), 'safe')
+        if not safe_content:
+            raise LynseAPIError('Missing todo content; cannot create the todo.')
+        item: Dict[str, Any] = {"todoContent": safe_content}
+        if owner:
+            item["owner"] = self._sanitize_param(str(owner), 'safe')
+        if deadline:
+            item["expectedCompleteTime"] = str(deadline).strip()
+        return self._request(
+            'POST',
+            '/api/business/file/todo/update',
+            json_data={"todoUpdateList": [item]},
+        )
 
     def get_outline(self, file_id: str) -> Dict[str, Any]:
         """获取文件大纲"""
@@ -1791,6 +1949,10 @@ class LynseAPI:
         """获取文件夹/分组列表"""
         return self._request('GET', '/api/business/file/folder/list')
 
+    def count_files_by_folder(self) -> Dict[str, Any]:
+        """Return server-side file counts for each folder/category."""
+        return self._request('GET', '/api/business/file/category/count')
+
     def create_folder(self, folder_data: Dict[str, Any]) -> Dict[str, Any]:
         """创建文件夹/分组"""
         return self._request('POST', '/api/business/file/folder/add', json_data=folder_data)
@@ -1803,6 +1965,16 @@ class LynseAPI:
             'fileIds': payload.get('fileIds') or [],
         }
         return self._request('GET', '/api/business/file/changeFolder', params=params)
+
+    def delete_folders(self, folder_ids: List[str]) -> Dict[str, Any]:
+        """Delete folders by ID."""
+        safe_ids = [self._sanitize_param(str(folder_id), 'safe') for folder_id in folder_ids]
+        safe_ids = [folder_id for folder_id in safe_ids if folder_id]
+        return self._request(
+            'DELETE',
+            '/api/business/file/delete',
+            params={'folderIds': safe_ids},
+        )
 
     def organize_meetings(self, days: int = None, execute: bool = False,
                           yes: bool = False, include_no_conclusion: bool = False) -> Dict[str, Any]:
@@ -2130,6 +2302,7 @@ def _print_help():
             ("meetings search <keyword>", "Search meetings by title"),
             ("meetings transcript <id>", "Get meeting transcription"),
             ("meetings transcript-text <id>", "Get meeting transcription text"),
+            ("meetings audio <id>", "Get meeting audio download metadata"),
             ("meetings summary <id>", "Get AI summary"),
             ("meetings outline <id>", "Get meeting outline"),
             ("meetings info <id>", "Get meeting details"),
@@ -2139,11 +2312,15 @@ def _print_help():
             ("folders list", "List folders/groups"),
             ("folders create <json>", "Create a folder"),
             ("folders move <json>", "Move files to folder"),
+            ("folders count", "Count files in each folder"),
+            ("folders delete <ids>", "Delete folders"),
         ]),
         ("Todos", [
             ("todos list [status] [page] [size]", "List todos (all/open/done)"),
             ("todos delete <ids>", "Delete todos"),
             ("todos clear", "Clear completed todos"),
+            ("todos add <content> [owner] [deadline]", "Create a todo"),
+            ("todos reschedule <id> <deadline>", "Change a todo deadline"),
         ]),
         ("Devices & Models", [
             ("devices list", "List bound devices"),
