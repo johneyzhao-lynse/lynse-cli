@@ -1,0 +1,85 @@
+name: Publish to SkillHub
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish after the dry-run passes
+        required: true
+        type: boolean
+        default: false
+      changelog:
+        description: Changelog used for a manual publish
+        required: false
+        type: string
+        default: Manual GitHub Actions publish
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skillhub-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SKILLHUB_HOST: https://api.skillhub.cn
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Install SkillHub CLI
+        run: |
+          curl -fsSL https://skillhub.cn/install/install.sh | bash -s -- --cli-only
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Show SkillHub CLI version
+        run: skillhub --version
+
+      - name: Build SkillHub package
+        run: python3 scripts/build_skill_package.py --skillhub
+
+      - name: Validate tag and Skill version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          SKILL_VERSION=$(unzip -p dist/lynse-cli-skill.zip SKILL.md | sed -n 's/^version:[[:space:]]*//p' | head -1 | tr -d '"')
+          TAG_VERSION=${GITHUB_REF_NAME#v}
+          echo "tag=$TAG_VERSION skill=$SKILL_VERSION"
+          test -n "$SKILL_VERSION"
+          test "$TAG_VERSION" = "$SKILL_VERSION"
+
+      - name: Dry-run Skill package
+        run: skillhub publish dist/lynse-cli-skill.zip --host "$SKILLHUB_HOST" --dry-run
+
+      - name: Login to SkillHub
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish == true
+        env:
+          SKILLHUB_KEY: ${{ secrets.SKILLHUB_KEY }}
+        run: |
+          if [ -z "$SKILLHUB_KEY" ]; then
+            echo "::error::Repository secret SKILLHUB_KEY is not configured."
+            exit 1
+          fi
+          skillhub login --key "$SKILLHUB_KEY" --host "$SKILLHUB_HOST"
+          skillhub auth whoami --host "$SKILLHUB_HOST"
+
+      - name: Publish Skill
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish == true
+        env:
+          MANUAL_CHANGELOG: ${{ inputs.changelog }}
+        run: |
+          CHANGELOG="$MANUAL_CHANGELOG"
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="GitHub release $GITHUB_REF_NAME"
+          fi
+          skillhub publish dist/lynse-cli-skill.zip \
+            --host "$SKILLHUB_HOST" \
+            --changelog "$CHANGELOG" \
+            --json

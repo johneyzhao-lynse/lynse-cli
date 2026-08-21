@@ -24,6 +24,7 @@ FORBIDDEN_CONTENT = {
     r"LYNCLAW_HTTP_DEBUG": "undeclared external debug integration",
     r"runtime\.log_config": "undeclared external runtime integration",
 }
+SKILLHUB_FIELDS = ("slug", "displayName", "version", "summary")
 
 
 def validate_sources() -> None:
@@ -40,12 +41,40 @@ def validate_sources() -> None:
                 )
 
 
-def build_zip(output: Path) -> None:
+def skillhub_skill_md() -> bytes:
+    """Return SKILL.md with SkillHub publishing fields promoted to the root."""
+    text = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+    if not text.startswith("---\n"):
+        raise SystemExit("SKILL.md must start with YAML frontmatter")
+
+    promoted = []
+    for field in SKILLHUB_FIELDS:
+        match = re.search(rf"(?m)^  {re.escape(field)}:[ \\t]*(.+)$", text)
+        if not match:
+            raise SystemExit(f"SKILL.md metadata is missing {field}")
+        promoted.append(f"{field}: {match.group(1).strip()}")
+
+    first_line_end = text.find("\n", len("---\n"))
+    if first_line_end == -1:
+        raise SystemExit("SKILL.md frontmatter is incomplete")
+    transformed = (
+        text[: first_line_end + 1]
+        + "\n".join(promoted)
+        + "\n"
+        + text[first_line_end + 1 :]
+    )
+    return transformed.encode("utf-8")
+
+
+def build_zip(output: Path, *, skillhub: bool = False) -> None:
     validate_sources()
     output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for relative_path in REQUIRED_FILES:
-            data = (ROOT / relative_path).read_bytes()
+            if skillhub and relative_path == Path("SKILL.md"):
+                data = skillhub_skill_md()
+            else:
+                data = (ROOT / relative_path).read_bytes()
             info = zipfile.ZipInfo(relative_path.as_posix(), date_time=(1980, 1, 1, 0, 0, 0))
             info.create_system = 3
             info.external_attr = 0o100644 << 16
@@ -66,8 +95,13 @@ def main() -> None:
         default=DEFAULT_OUTPUT,
         help=f"output ZIP path (default: {DEFAULT_OUTPUT})",
     )
+    parser.add_argument(
+        "--skillhub",
+        action="store_true",
+        help="promote SkillHub publishing fields in the packaged SKILL.md",
+    )
     args = parser.parse_args()
-    build_zip(args.output.expanduser().resolve())
+    build_zip(args.output.expanduser().resolve(), skillhub=args.skillhub)
 
 
 if __name__ == "__main__":
