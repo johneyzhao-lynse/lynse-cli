@@ -24,7 +24,12 @@ FORBIDDEN_CONTENT = {
     r"LYNCLAW_HTTP_DEBUG": "undeclared external debug integration",
     r"runtime\.log_config": "undeclared external runtime integration",
 }
-SKILLHUB_FIELDS = ("slug", "displayName", "version", "summary")
+SKILLHUB_FIELD_SOURCES = (
+    ("slug", "skillhubSlug"),
+    ("displayName", "displayName"),
+    ("version", "version"),
+    ("summary", "summary"),
+)
 
 
 def validate_sources() -> None:
@@ -48,11 +53,14 @@ def skillhub_skill_md() -> bytes:
         raise SystemExit("SKILL.md must start with YAML frontmatter")
 
     promoted = []
-    for field in SKILLHUB_FIELDS:
-        match = re.search(rf"(?m)^  {re.escape(field)}:[ \\t]*(.+)$", text)
+    promoted_values = {}
+    for field, metadata_field in SKILLHUB_FIELD_SOURCES:
+        match = re.search(rf"(?m)^  {re.escape(metadata_field)}:[ \\t]*(.+)$", text)
         if not match:
-            raise SystemExit(f"SKILL.md metadata is missing {field}")
-        promoted.append(f"{field}: {match.group(1).strip()}")
+            raise SystemExit(f"SKILL.md metadata is missing {metadata_field}")
+        value = match.group(1).strip()
+        promoted_values[field] = value
+        promoted.append(f"{field}: {value}")
 
     first_line_end = text.find("\n", len("---\n"))
     if first_line_end == -1:
@@ -62,6 +70,12 @@ def skillhub_skill_md() -> bytes:
         + "\n".join(promoted)
         + "\n"
         + text[first_line_end + 1 :]
+    )
+    transformed = re.sub(
+        r"(?m)^  slug:[ \\t]*.+$",
+        f"  slug: {promoted_values['slug']}",
+        transformed,
+        count=1,
     )
     return transformed.encode("utf-8")
 

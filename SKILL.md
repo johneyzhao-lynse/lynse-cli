@@ -15,7 +15,8 @@ license: MIT
 allowed-tools: Bash(python3:*), Bash(python:*), Bash(py:*)
 metadata:
   slug: lynse-cli
-  displayName: 灵光记 / Lynse CLI
+  skillhubSlug: lynse
+  displayName: 灵光记/lynse-cli
   version: 1.8.0
   summary: 通过 Lynse / 灵光记 API 查询会议转写与总结，并管理文件、待办和设备。
   openclaw:

@@ -30,8 +30,10 @@ class SkillPackageTests(unittest.TestCase):
                 )
 
         frontmatter = skill_md.split("---", 2)[1]
-        self.assertIn("\nslug: lynse-cli", frontmatter)
-        self.assertIn("\ndisplayName: 灵光记 / Lynse CLI", frontmatter)
+        self.assertIn("\nslug: lynse", frontmatter)
+        self.assertIn("\n  slug: lynse", frontmatter)
+        self.assertNotIn("\n  slug: lynse-cli", frontmatter)
+        self.assertIn("\ndisplayName: 灵光记/lynse-cli", frontmatter)
         self.assertIn("\nversion: 1.8.0", frontmatter)
         self.assertIn("\nsummary:", frontmatter)
 
