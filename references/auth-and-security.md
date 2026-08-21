@@ -16,6 +16,7 @@ Header: X-API-Key: $LYNSE_API_KEY
 
 - **API Key format**: `dk_xxx` (obtained from system console)
 - **Token TTL**: 2 hours, auto-refreshes on expiry
+- **API Key config**: `~/.lynse/config.json`, file permission 600 (owner read/write only)
 - **Token cache**: `~/.lynse/tokens.json`, file permission 600 (owner read/write only)
 
 ## Config Resolution Order (v1.4.0+)
@@ -67,6 +68,7 @@ transient — they do **not** mean your key is wrong.
 
 ### Auth security
 - Token auto-refreshes on failure; if refresh fails, prompt user to check API Key
+- User config file must have 600 permissions (owner read/write only)
 - Token cache file must have 600 permissions (owner read/write only)
 
 ### Input safety

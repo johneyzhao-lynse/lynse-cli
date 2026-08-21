@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- Save `~/.lynse/config.json` with owner-only permissions on Unix so locally stored API keys are not readable by other users.
+- Guide Agent Skill installations to collect API keys only through the local terminal's hidden interactive prompt.
+
+### Changed
+
+- Recommend the cross-Agent `skills` installer for Codex, Claude Code, Cursor, and other Agent Skills clients; clarify that directly running the npm CLI does not install a Skill.
+
 ## 1.8.0 (2026-08-21)
 
 ### New Features

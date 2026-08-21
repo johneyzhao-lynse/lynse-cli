@@ -2,7 +2,31 @@
 
 Requires Python 3.11 or newer on Windows, macOS, and Linux.
 
-## Auto Install (Recommended)
+## Install as an Agent Skill (Recommended)
+
+Send the following instruction to Codex, Claude Code, Cursor, or another agent that supports
+Agent Skills:
+
+> Install `lynse-cli` as a global Skill discoverable by the current Agent, not merely as a
+> temporary CLI process.
+>
+> ```bash
+> npx -y skills add lynse-ai/lynse-cli --skill lynse-cli --global
+> ```
+>
+> Configure `LYNSE_API_HOST=https://api.lynse.cn` through the current Agent's supported
+> environment configuration or the installed Skill's `.env`; do not put an API key in `.env`.
+> Verify that the Agent discovers `lynse-cli`, then run the read-only
+> `<Python 3.11+> lynse.py version` command from the Skill directory. When authentication is
+> needed, start `<Python 3.11+> lynse.py auth login --host https://api.lynse.cn` in a local
+> interactive terminal and tell the user to enter the API key only in its hidden input prompt.
+> Never request, display, or print an API key in chat or logs.
+
+This route lets the installer select the current Agent's supported Skill directory. If the Agent
+does not support Skills or lacks Shell, network, or directory-write access, it must report the
+missing capability instead of bypassing permissions.
+
+## Standalone Installer Scripts
 
 ```bash
 # macOS/Linux
@@ -55,6 +79,7 @@ override the key you saved via `auth login`.
 
 | Environment | Skills Directory |
 |-------------|-----------------|
+| Codex | Agent-selected Codex Skill directory |
 | OpenClaw | `~/.openclaw/workspace/skills/` |
 | Claude Code | `~/.claude/skills/` |
 | Cursor | `~/.cursor/skills/` |

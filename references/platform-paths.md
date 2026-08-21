@@ -9,6 +9,7 @@ Python 3.11 or newer is required in every environment.
 
 | Environment | Skills Directory | Env Vars |
 |-------------|------------------|----------|
+| Codex | Agent-selected Codex Skill directory | Manual `.env` or env vars |
 | Claude Code | `~/.claude/skills/lynse-cli/` | Manual `.env` or env vars |
 | Cursor | `~/.cursor/skills/lynse-cli/` | Manual `.env` or env vars |
 | Hermes | `~/.hermes/skills/lynse-cli/` | Manual `.env` or env vars |
@@ -31,7 +32,7 @@ string.
 The other difference across environments is **how env vars reach the process**:
 
 - **OpenClaw**: injects `LYNSE_API_HOST` and `LYNSE_API_KEY` automatically.
-- **Other environments**: read from `.env`, `~/.lynse/config.json`, or exported env vars (see `references/auth-and-security.md`).
+- **Codex and other environments**: read from `.env`, `~/.lynse/config.json`, or exported env vars (see `references/auth-and-security.md`).
 
 ## Cross-Platform Execution Rules
 

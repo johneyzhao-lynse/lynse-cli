@@ -929,6 +929,24 @@ def _load_user_config() -> dict:
         return {}
 
 
+def _write_user_config(config: dict) -> Path:
+    """Write user credentials with owner-only permissions on Unix."""
+    config_dir = _get_user_config_dir()
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / 'config.json'
+    fd = os.open(config_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        if os.name != 'nt':
+            os.fchmod(fd, 0o600)
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            fd = -1
+            json.dump(config, f, indent=2)
+    finally:
+        if fd >= 0:
+            os.close(fd)
+    return config_file
+
+
 def _load_install_env(config_file: Optional[str] = None) -> None:
     """加载安装目录下的 .env 到 os.environ（最低优先级的凭据来源）。
 
@@ -2331,9 +2349,7 @@ def _handle_auth_command(subcommand: str, args: list, flags: dict):
                     file=sys.stderr,
                 )
                 sys.exit(EXIT_INVALID)
-        config_dir = _get_user_config_dir()
-        config_dir.mkdir(parents=True, exist_ok=True)
-        config_file = config_dir / 'config.json'
+        config_file = _get_user_config_dir() / 'config.json'
         config = {}
         if config_file.exists():
             try:
@@ -2349,8 +2365,7 @@ def _handle_auth_command(subcommand: str, args: list, flags: dict):
             api = LynseAPI(api_key=api_key, api_host=api_host)
             token = api.auth_login(api_key, api_host)
             config['access_token'] = token
-            with open(config_file, 'w', encoding='utf-8') as f:
-                json.dump(config, f, indent=2)
+            config_file = _write_user_config(config)
             token_file = config_dir / 'tokens.json'
             api._save_token(token)
             result = {'status': 'ok', 'message': 'API key validated and saved', 'token_cached': True,
@@ -2395,8 +2410,7 @@ def _handle_auth_command(subcommand: str, args: list, flags: dict):
                 except Exception:
                     pass
                 config.pop('api_key', None); config.pop('access_token', None)
-                with open(cf, 'w', encoding='utf-8') as f:
-                    json.dump(config, f, indent=2)
+                _write_user_config(config)
                 removed.append(str(cf))
         result = {'status': 'ok', 'removed': removed} if removed else {'status': 'ok', 'message': 'No cached tokens found'}
         _format_output(result, 'auth_logout', flags)

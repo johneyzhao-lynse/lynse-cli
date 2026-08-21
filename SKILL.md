@@ -182,7 +182,7 @@ Sort by `recordStartTime` ascending. Append summary line: `Total: N meetings, HH
   command arguments, query values, request bodies, or response bodies.
 - **Auth**: two-layer API Key + Token. See [references/auth-and-security.md](references/auth-and-security.md) for the full flow, config resolution order, and security rules (sensitive data masking, owner-ID guard, token cache permissions).
 - **Errors**: see [references/error-handling.md](references/error-handling.md) for the HTTP/business error mapping and how to report errors to users.
-- **Platform paths**: the skill installs the same into Claude Code / Cursor / Hermes / OpenClaw. See [references/platform-paths.md](references/platform-paths.md) for per-environment directories and env-var injection.
+- **Platform paths**: the skill installs the same into Codex / Claude Code / Cursor / Hermes / OpenClaw. See [references/platform-paths.md](references/platform-paths.md) for per-environment directories and env-var injection.
 
 ## Reference Docs
 

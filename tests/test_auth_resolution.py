@@ -10,9 +10,10 @@ Precedence (highest → lowest):
 import os
 import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
-from lynse import LynseAPI
+from lynse import LynseAPI, _write_user_config
 
 
 _ENV_KEYS = (
@@ -105,6 +106,21 @@ class CredentialResolutionTests(unittest.TestCase):
 
         self.assertEqual(key, "dk_VALID_user_key_9999")
         self.assertEqual(source, "config")
+
+    @unittest.skipIf(os.name == "nt", "Unix permission bits are not available on Windows")
+    def test_user_config_is_written_with_owner_only_permissions(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_dir = Path(tmpdir) / ".lynse"
+            config_dir.mkdir()
+            config_file = config_dir / "config.json"
+            config_file.write_text("{}", encoding="utf-8")
+            config_file.chmod(0o644)
+
+            with mock.patch("lynse._get_user_config_dir", return_value=config_dir):
+                written = _write_user_config({"api_key": "dk_TEST_key_1234"})
+
+            self.assertEqual(written, config_file)
+            self.assertEqual(config_file.stat().st_mode & 0o777, 0o600)
 
 
 if __name__ == "__main__":

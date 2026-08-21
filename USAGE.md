@@ -15,17 +15,27 @@
 
 ### 第一步：安装
 
-**推荐方式：使用 npx 一键安装**
+**推荐方式：安装为 Agent Skill**
+
+将下面整段说明直接发给 Codex、Claude Code、Cursor 或其他支持 Agent Skills 的 Agent：
+
+> 请将“灵光记/lynse-cli”安装为当前 Agent 可发现的全局 Skill，而不是只临时运行 CLI。
+>
+> ```bash
+> npx -y skills add lynse-ai/lynse-cli --skill lynse-cli --global
+> ```
+>
+> API 服务器地址：`https://api.lynse.cn`。请将 `LYNSE_API_HOST=https://api.lynse.cn` 写入当前 Agent 支持的环境配置或已安装 Skill 的 `.env`；不要在 `.env` 中写入 API Key。
+>
+> 安装前确认 Node.js/npm 和 Python 3.11+ 可用。安装后确认 Agent 能发现 `lynse-cli`，并在 Skill 目录运行只读的 `<Python 3.11+> lynse.py version` 验证。需要认证时，请在本机终端启动 `<Python 3.11+> lynse.py auth login --host https://api.lynse.cn`，提示用户只在终端的隐藏输入框中输入 API Key；不要在对话或日志中索取、显示或输出 API Key。
+
+**临时运行 CLI（不会安装 Agent Skill）**
+
 ```bash
-npx -y @lynse.ai/lynse-cli@latest
+npx -y @lynse.ai/lynse-cli@latest --help
 ```
 
 **其他安装方式：**
-
-#### AI 助手环境添加 skill（OpenClaw 等）
-```bash
-npx skills add lynse-ai/lynse-cli
-```
 
 #### 使用 npm 全局安装
 ```bash
@@ -80,7 +90,7 @@ python3 lynse.py meetings list
 ## 💻 基本使用
 
 ### 系统要求
-- Python 3.8 或更高版本
+- Python 3.11 或更高版本
 - 网络连接
 
 ### 命令格式
