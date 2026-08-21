@@ -27,8 +27,8 @@ class EmbeddingContractTests(unittest.TestCase):
                 http_client=FakeHttp(),
             )
 
-    def test_version_is_1_8_0(self):
-        self.assertEqual(lynse.CLI_VERSION, "1.8.0")
+    def test_version_is_1_8_1(self):
+        self.assertEqual(lynse.CLI_VERSION, "1.8.1")
 
     def test_constructor_supports_embedded_consumers(self):
         api = self.make_api()

@@ -49,7 +49,7 @@ npx -y @lynse.ai/lynse-cli@latest --help
 npm install -g @lynse.ai/lynse-cli
 
 # Python 项目复用同一 API 客户端
-python3 -m pip install "git+https://github.com/lynse-ai/lynse-cli.git@v1.8.0"
+python3 -m pip install "git+https://github.com/lynse-ai/lynse-cli.git@v1.8.1"
 
 # 或使用安装脚本
 # macOS/Linux

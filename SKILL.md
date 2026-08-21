@@ -17,7 +17,7 @@ metadata:
   slug: lynse-cli
   skillhubSlug: lynse
   displayName: 灵光记/lynse-cli
-  version: 1.8.0
+  version: 1.8.1
   summary: 通过 Lynse / 灵光记 API 查询会议转写与总结，并管理文件、待办和设备。
   openclaw:
     requires:

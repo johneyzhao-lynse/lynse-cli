@@ -34,7 +34,7 @@ class SkillPackageTests(unittest.TestCase):
         self.assertIn("\n  slug: lynse", frontmatter)
         self.assertNotIn("\n  slug: lynse-cli", frontmatter)
         self.assertIn("\ndisplayName: 灵光记/lynse-cli", frontmatter)
-        self.assertIn("\nversion: 1.8.0", frontmatter)
+        self.assertIn("\nversion: 1.8.1", frontmatter)
         self.assertIn("\nsummary:", frontmatter)
 
 

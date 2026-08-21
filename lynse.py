@@ -68,7 +68,7 @@ except ImportError:
 
 
 # CLI 版本
-CLI_VERSION = '1.8.0'
+CLI_VERSION = '1.8.1'
 
 # 语义化退出码
 EXIT_SUCCESS = 0
