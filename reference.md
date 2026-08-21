@@ -10,8 +10,6 @@
 | `file.write` | Edit file content | editConclusion, editOutline, editTransRecord |
 | `device.read` | Read device info | getMyDevices, getDeviceInfo, getDevicePage |
 | `device.manage` | Manage devices | unbindDevice |
-| `ai.read` | View AI models | getAiModels |
-| `ai.manage` | Manage AI models | addModel, editModel, deleteModel, enableModel |
 | `message.send` | Send messages | sendSms, sendEmail |
 | `team.read` | View team | listMyTeam |
 | `team.manage` | Manage team | createTeam, editTeam, removeTeamMember |

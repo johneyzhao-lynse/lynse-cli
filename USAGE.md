@@ -10,7 +10,6 @@
 - 📁 文件夹自动整理
 - ✅ 待办事项管理
 - 📱 设备管理
-- 🤖 AI 模型配置
 
 ## 🚀 快速开始
 
@@ -123,8 +122,8 @@ python3 lynse.py meetings search 关键词
 # 获取会议转写文本
 python3 lynse.py meetings transcript <会议ID>
 
-# 获取 AI 总结
-python3 lynse.py meetings summary <会议ID>
+# 获取 AI 总结（默认第一篇；追加 --all 获取全部）
+python3 lynse.py meetings summary <会议ID> [--all]
 
 # 获取会议大纲
 python3 lynse.py meetings outline <会议ID>
@@ -181,7 +180,12 @@ python3 lynse.py folders create '{"name":"项目文档","icon":"📁"}'
 
 # 移动文件到文件夹
 python3 lynse.py folders move '{"folderId":"xxx","fileIds":["id1","id2"]}'
+
+# 删除空文件夹（命令会先用服务端统计和完整文件清单确认为空）
+python3 lynse.py folders delete <文件夹ID>
 ```
+
+`folders delete` 采用整批拒绝策略：只要任意目标文件夹非空、不存在、统计异常或无法确认，整批都不会发送删除请求。不能根据本地整理计划推断文件夹为空。
 
 ### 4. 设备管理
 
@@ -196,26 +200,7 @@ python3 lynse.py devices info <设备ID>
 python3 lynse.py devices unbind <设备ID>
 ```
 
-### 5. AI 模型管理
-
-```bash
-# 列出可用的 AI 模型
-python3 lynse.py models list
-
-# 添加新模型
-python3 lynse.py models add '{"name":"模型名称","type":"类型"}'
-
-# 删除模型
-python3 lynse.py models delete <模型ID>
-
-# 编辑模型
-python3 lynse.py models edit '{"id":"模型ID","name":"新名称"}'
-
-# 启用/禁用模型
-python3 lynse.py models enable <模型ID> true
-```
-
-### 6. 账户和认证
+### 5. 账户和认证
 
 ```bash
 # 查看个人信息

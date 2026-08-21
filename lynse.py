@@ -67,12 +67,8 @@ except ImportError:
     print("Error: requests library is not installed. Run: pip install requests", file=sys.stderr)
 
 
-def _lynse_log_ts() -> str:
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-
 # CLI 版本
-CLI_VERSION = '1.7.0'
+CLI_VERSION = '1.8.0'
 
 # 语义化退出码
 EXIT_SUCCESS = 0
@@ -142,20 +138,12 @@ _SUBCOMMAND_ALIASES = {
         'list': 'listTodos',
         'clear': 'clearCompletedTodos',
         'delete': 'deleteTodos',
-        'add': 'addTodo',
         'reschedule': 'rescheduleTodo',
     },
     'devices': {
         'list': 'getMyDevices',
         'info': 'getDeviceInfo',
         'unbind': 'unbindDevice',
-    },
-    'models': {
-        'list': 'getAiModels',
-        'add': 'addModel',
-        'delete': 'deleteModel',
-        'edit': 'editModel',
-        'enable': 'enableModel',
     },
     'auth': {
         'login': '__auth_login__',
@@ -174,7 +162,9 @@ _ALIAS_HANDLERS = {
     'getTranscriptionRecord': lambda api, a: api.get_transcription_record(a[0]) if a else _missing_arg('file ID'),
     'getTranscriptionText': lambda api, a: api.get_transcription_text(a[0]) if a else _missing_arg('file ID'),
     'getAudioFile': lambda api, a: api.get_audio_file(a[0]) if a else _missing_arg('file ID'),
-    'getConclusion': lambda api, a: api.get_conclusion(a[0]) if a else _missing_arg('file ID'),
+    'getConclusion': lambda api, a: api.get_conclusion(
+        a[0], first_only='--all' not in a[1:]
+    ) if a else _missing_arg('file ID'),
     'getFileInfo': lambda api, a: api.get_file_info(a[0]) if a else _missing_arg('file ID'),
     'getOutline': lambda api, a: api.get_outline(a[0]) if a else _missing_arg('file ID'),
     'organizeMeetings': lambda api, a: api.organize_meetings(**_parse_organize_args(a)),
@@ -186,19 +176,11 @@ _ALIAS_HANDLERS = {
     'listTodos': lambda api, a: api.list_todos(status=(a[0] if a else 'all'), page_num=int(a[1]) if len(a) > 1 else 1, page_size=int(a[2]) if len(a) > 2 else 20),
     'clearCompletedTodos': lambda api, a: api.clear_completed_todos(),
     'deleteTodos': lambda api, a: _handle_delete_todos(api, a),
-    'addTodo': lambda api, a: api.add_todo(
-        a[0], owner=a[1] if len(a) > 1 else '', deadline=a[2] if len(a) > 2 else ''
-    ) if a else _missing_arg('todo content'),
     'rescheduleTodo': lambda api, a: api.reschedule_todo(a[0], a[1])
     if len(a) >= 2 else _missing_arg('todo ID and new deadline'),
     'getMyDevices': lambda api, a: api.get_my_devices(),
     'getDeviceInfo': lambda api, a: api.get_device_info(a[0]) if a else _missing_arg('device ID'),
     'unbindDevice': lambda api, a: api.unbind_device(a[0]) if a else _missing_arg('device ID'),
-    'getAiModels': lambda api, a: api.get_ai_models(),
-    'addModel': lambda api, a: api.add_model(json.loads(a[0])) if a else _missing_arg('JSON data'),
-    'deleteModel': lambda api, a: api.delete_model(a[0]) if a else _missing_arg('model ID'),
-    'editModel': lambda api, a: api.edit_model(json.loads(a[0])) if a else _missing_arg('JSON data'),
-    'enableModel': lambda api, a: api.enable_model(a[0], a[1].lower() in ('true', '1', 'yes')) if len(a) >= 2 else _missing_arg('model ID and true/false'),
     'getCurrentCustomer': lambda api, a: api.get_current_customer(),
 }
 
@@ -223,16 +205,10 @@ _ALIAS_INFO = {
     'listTodos': 'todos list',
     'clearCompletedTodos': 'todos clear',
     'deleteTodos': 'todos delete',
-    'addTodo': 'todos add',
     'rescheduleTodo': 'todos reschedule',
     'getMyDevices': 'devices list',
     'getDeviceInfo': 'devices info',
     'unbindDevice': 'devices unbind',
-    'getAiModels': 'models list',
-    'addModel': 'models add',
-    'deleteModel': 'models delete',
-    'editModel': 'models edit',
-    'enableModel': 'models enable',
     'getCurrentCustomer': 'me',
 }
 
@@ -848,16 +824,6 @@ def _format_text(result: dict, command: str) -> str:
                 sn = item.get('serialNumber') or item.get('authSn') or 'N/A'
                 lines.append(f'  [{item.get("id", "?")}] SN: {sn}  {item.get("deviceName", "")}')
         return '\n'.join(lines)
-    if command == 'getAiModels':
-        items = data if isinstance(data, list) else (data.get('list', []) if isinstance(data, dict) else [])
-        if not items:
-            return 'No models found.'
-        lines = []
-        for item in items:
-            if isinstance(item, dict):
-                enabled = '✓' if item.get('enabled') else '✗'
-                lines.append(f'  [{item.get("id", "?")}] {enabled} {item.get("name", "?")}')
-        return '\n'.join(lines)
     if isinstance(data, dict) or (data is None and isinstance(result, dict)):
         d = data if isinstance(data, dict) else result
         return '\n'.join(f'{k}: {v}' for k, v in d.items())
@@ -878,7 +844,6 @@ def _format_table(result: dict, command: str) -> str:
         'listFolders': [('ID', 'id'), ('Name', 'folderName')],
         'listTodos': [('Done', 'isCompleted'), ('Content', 'todoContent'), ('Deadline', 'expectedCompleteTime')],
         'getMyDevices': [('ID', 'id'), ('SN', 'serialNumber'), ('Name', 'deviceName')],
-        'getAiModels': [('ID', 'id'), ('Name', 'name'), ('Enabled', 'enabled')],
     }
     if command not in list_commands:
         return _format_text(result, command)
@@ -1178,93 +1143,6 @@ class LynseAPI:
             headers.update(extra)
         return headers
 
-    @staticmethod
-    def _lynse_debug_enabled() -> bool:
-        return any(
-            os.environ.get(key, "").strip().lower() in ("1", "true", "yes")
-            for key in ("LYNSE_HTTP_DEBUG", "LYNCLAW_HTTP_DEBUG")
-        )
-
-    def _mask_headers_for_log(self, headers: Dict[str, str]) -> Dict[str, str]:
-        safe = dict(headers)
-        for key in list(safe.keys()):
-            if key.lower() in ("authorization", "x-api-key"):
-                safe[key] = "[REDACTED]"
-        return safe
-
-    @staticmethod
-    def _destination_for_log(url: str) -> str:
-        """Return only the request origin, never a path, query, or user info."""
-        try:
-            parsed = urlsplit(url)
-            if not parsed.scheme or not parsed.hostname:
-                return "[invalid URL]"
-            port = f":{parsed.port}" if parsed.port else ""
-            return f"{parsed.scheme}://{parsed.hostname}{port}"
-        except ValueError:
-            return "[invalid URL]"
-
-    def _log_lynse_request(
-        self,
-        *,
-        method: str,
-        url: str,
-        headers: Dict[str, str],
-        params: Optional[Dict[str, Any]] = None,
-        json_data: Optional[Dict[str, Any]] = None,
-        note: str = "",
-    ) -> None:
-        if not self._lynse_debug_enabled():
-            return
-        payload = {
-            "note": note or None,
-            "method": method,
-            "destination": self._destination_for_log(url),
-            "headers": self._mask_headers_for_log(headers),
-            "param_names": sorted(str(key) for key in params) if params else None,
-            "json_fields": sorted(str(key) for key in json_data) if json_data else None,
-            "http_injected_token": self._is_http_injected_token(
-                self._strip_bearer_prefix(headers.get("Authorization", ""))
-            ),
-        }
-        print(
-            f"[{_lynse_log_ts()}] [lynse-cli] >>> request {json.dumps(payload, ensure_ascii=False)}",
-            file=sys.stderr,
-            flush=True,
-        )
-
-    def _log_lynse_response(
-        self,
-        *,
-        method: str,
-        url: str,
-        status_code: int,
-        data: Any,
-        text_preview: str = "",
-    ) -> None:
-        if not self._lynse_debug_enabled():
-            return
-        summary: Dict[str, Any] = {
-            "method": method,
-            "destination": self._destination_for_log(url),
-            "http_status": status_code,
-        }
-        if isinstance(data, dict):
-            summary["business_code"] = data.get("code")
-            if "data" in data:
-                inner = data.get("data")
-                if isinstance(inner, list):
-                    summary["data_count"] = len(inner)
-                elif isinstance(inner, dict):
-                    summary["data_keys"] = list(inner.keys())[:20]
-        elif text_preview:
-            summary["raw_length"] = len(text_preview)
-        print(
-            f"[{_lynse_log_ts()}] [lynse-cli] <<< response {json.dumps(summary, ensure_ascii=False)}",
-            file=sys.stderr,
-            flush=True,
-        )
-
     def _build_auth_headers(self, token: str, extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
         return self._build_auth_headers_with_mode(
             token,
@@ -1316,12 +1194,6 @@ class LynseAPI:
         # 401/403 表示密钥被拒，不重试；其余非 200 视为可重试的瞬时错误。
         max_attempts = 3
         for attempt in range(1, max_attempts + 1):
-            self._log_lynse_request(
-                method="POST",
-                url=url,
-                headers=headers,
-                note=f"exchange_token attempt {attempt}/{max_attempts}",
-            )
             try:
                 response = getattr(self, "_http", requests).post(
                     url, headers=headers, timeout=30
@@ -1341,9 +1213,6 @@ class LynseAPI:
                     raise LynseAPIError(
                         "API Key authentication failed: server returned invalid response format"
                     )
-                self._log_lynse_response(
-                    method="POST", url=url, status_code=response.status_code, data=data
-                )
                 data_payload = data.get('data') if isinstance(data, dict) else None
                 data_payload = data_payload if isinstance(data_payload, dict) else {}
                 access_token = data_payload.get('accessToken') or data.get('accessToken')
@@ -1497,15 +1366,6 @@ class LynseAPI:
                 use_bearer=_force_auth_mode,
                 extra=headers,
             )
-        self._log_lynse_request(
-            method=method,
-            url=url,
-            headers=request_headers,
-            params=params,
-            json_data=json_data,
-            note=f"business_api retry={retry_count}",
-        )
-
         try:
             response = getattr(self, "_http", requests).request(
                 method,
@@ -1534,14 +1394,6 @@ class LynseAPI:
                 data = response.json()
             except json.JSONDecodeError:
                 data = {'raw': response.text}
-
-            self._log_lynse_response(
-                method=method,
-                url=url,
-                status_code=response.status_code,
-                data=data,
-                text_preview=response.text,
-            )
 
             # 检查业务错误码
             code = data.get('code')
@@ -1786,11 +1638,22 @@ class LynseAPI:
             },
         }
 
-    def get_conclusion(self, file_id: str) -> Dict[str, Any]:
-        """获取文件总结"""
+    def get_conclusion(self, file_id: str, first_only: bool = True) -> Dict[str, Any]:
+        """获取文件总结；默认仅返回服务端列表中的第一篇。"""
         safe_id = self._sanitize_param(file_id, 'safe')
-        return self._request('GET', '/api/business/file/conclusion/list',
-                            params={'fileId': safe_id})
+        response = self._request(
+            'GET',
+            '/api/business/file/conclusion/list',
+            params={'fileId': safe_id},
+        )
+        if not first_only or not isinstance(response, dict):
+            return response
+        conclusions = response.get('data')
+        if not isinstance(conclusions, list):
+            return response
+        normalized = dict(response)
+        normalized['data'] = conclusions[0] if conclusions else None
+        return normalized
 
     def list_todos(self, status: str = 'all', page_num: int = 1, page_size: int = 20) -> Dict[str, Any]:
         """获取全量文件待办后在本地按状态和页码切片。"""
@@ -1846,22 +1709,6 @@ class LynseAPI:
             ]
         }
         return self._request('POST', '/api/business/file/todo/update', json_data=body)
-
-    def add_todo(self, content: str, *, owner: str = "", deadline: str = "") -> Dict[str, Any]:
-        """Create a todo through the shared todo update endpoint."""
-        safe_content = self._sanitize_param(str(content or "").strip(), 'safe')
-        if not safe_content:
-            raise LynseAPIError('Missing todo content; cannot create the todo.')
-        item: Dict[str, Any] = {"todoContent": safe_content}
-        if owner:
-            item["owner"] = self._sanitize_param(str(owner), 'safe')
-        if deadline:
-            item["expectedCompleteTime"] = str(deadline).strip()
-        return self._request(
-            'POST',
-            '/api/business/file/todo/update',
-            json_data={"todoUpdateList": [item]},
-        )
 
     def get_outline(self, file_id: str) -> Dict[str, Any]:
         """获取文件大纲"""
@@ -1959,21 +1806,111 @@ class LynseAPI:
 
     def change_folder(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """移动文件到文件夹/分组"""
+        file_ids = payload.get('fileIds') or []
+        if not isinstance(file_ids, list):
+            file_ids = [file_ids]
         params = {
             'oldFolderId': payload.get('oldFolderId') or '',
             'newFolderId': payload.get('newFolderId') or '',
-            'fileIds': payload.get('fileIds') or [],
+            'fileIds': ','.join(str(file_id) for file_id in file_ids if file_id),
         }
         return self._request('GET', '/api/business/file/changeFolder', params=params)
 
     def delete_folders(self, folder_ids: List[str]) -> Dict[str, Any]:
-        """Delete folders by ID."""
+        """Delete folders only after the service confirms that every target is empty."""
         safe_ids = [self._sanitize_param(str(folder_id), 'safe') for folder_id in folder_ids]
-        safe_ids = [folder_id for folder_id in safe_ids if folder_id]
+        safe_ids = list(dict.fromkeys(folder_id for folder_id in safe_ids if folder_id))
+        if not safe_ids:
+            raise LynseAPIError('No folder IDs were provided for deletion.')
+
+        folders_response = self.list_folders()
+        folders = folders_response.get('data') if isinstance(folders_response, dict) else None
+        if not isinstance(folders, list):
+            raise LynseAPIError('Refusing to delete folders: folder list could not be verified.')
+        existing_ids = {
+            str(folder.get('id') or folder.get('folderId'))
+            for folder in folders
+            if isinstance(folder, dict) and (folder.get('id') or folder.get('folderId'))
+        }
+        missing_folders = [folder_id for folder_id in safe_ids if folder_id not in existing_ids]
+        if missing_folders:
+            raise LynseAPIError(
+                'Refusing to delete unknown folders: ' + ', '.join(missing_folders)
+            )
+
+        count_response = self.count_files_by_folder()
+        count_data = count_response.get('data') if isinstance(count_response, dict) else None
+        folder_stats = count_data.get('folderStats') if isinstance(count_data, dict) else None
+        if not isinstance(folder_stats, list):
+            raise LynseAPIError('Refusing to delete folders: folder counts could not be verified.')
+
+        counts: Dict[str, int] = {}
+        invalid_count_ids = []
+        target_ids = set(safe_ids)
+        for stat in folder_stats:
+            if not isinstance(stat, dict):
+                continue
+            folder_id = str(stat.get('folderId') or stat.get('id') or '')
+            if folder_id not in target_ids:
+                continue
+            try:
+                counts[folder_id] = int(stat.get('count'))
+            except (TypeError, ValueError):
+                invalid_count_ids.append(folder_id)
+        if invalid_count_ids:
+            raise LynseAPIError(
+                'Refusing to delete folders with invalid server counts: '
+                + ', '.join(invalid_count_ids)
+            )
+
+        non_zero_ids = [
+            folder_id
+            for folder_id in safe_ids
+            if folder_id in counts and counts[folder_id] != 0
+        ]
+        if non_zero_ids:
+            raise LynseAPIError(
+                'Refusing to delete folders whose server count is not zero: '
+                + ', '.join(non_zero_ids)
+            )
+
+        uncounted_ids = [folder_id for folder_id in safe_ids if folder_id not in counts]
+        if uncounted_ids:
+            files_response = self.list_files_paged(page_size=100)
+            files = files_response.get('data') if isinstance(files_response, dict) else None
+            if not isinstance(files, list):
+                raise LynseAPIError(
+                    'Refusing to delete folders: complete file inventory could not be verified.'
+                )
+            raw_total = files_response.get('total')
+            try:
+                total = int(raw_total) if raw_total is not None else len(files)
+            except (TypeError, ValueError):
+                raise LynseAPIError(
+                    'Refusing to delete folders: file inventory total is invalid.'
+                )
+            if len(files) < total:
+                raise LynseAPIError(
+                    'Refusing to delete folders: file inventory is incomplete.'
+                )
+            occupied_ids = {
+                str(file_record.get('folderId'))
+                for file_record in files
+                if isinstance(file_record, dict) and file_record.get('folderId')
+            }
+            non_empty_uncounted = [
+                folder_id for folder_id in uncounted_ids if folder_id in occupied_ids
+            ]
+            if non_empty_uncounted:
+                raise LynseAPIError(
+                    'Refusing to delete non-empty folders: '
+                    + ', '.join(non_empty_uncounted)
+                )
+
         return self._request(
             'DELETE',
             '/api/business/file/delete',
-            params={'folderIds': safe_ids},
+            params={'folderIds': ','.join(safe_ids)},
         )
 
     def organize_meetings(self, days: int = None, execute: bool = False,
@@ -2184,31 +2121,6 @@ class LynseAPI:
             raise LynseAPIError(f'未找到发言人：{old_name}')
         return self.edit_speaker_info({'taskId': resolved_task_id, 'speakerInfoList': speaker_info_list})
 
-    # AI 模型管理
-    def get_ai_models(self) -> Dict[str, Any]:
-        """获取 AI 模型列表"""
-        return self._request('GET', '/api/business/ai/getAllAIModelList')
-
-    def add_model(self, model_data: Dict[str, Any]) -> Dict[str, Any]:
-        """添加 AI 模型"""
-        return self._request('POST', '/api/business/ai/addModel', json_data=model_data)
-
-    def delete_model(self, model_id: str) -> Dict[str, Any]:
-        """删除 AI 模型"""
-        safe_id = self._sanitize_param(model_id, 'safe')
-        return self._request('DELETE', '/api/business/ai/deleteModel',
-                            headers={'id': safe_id})
-
-    def edit_model(self, model_data: Dict[str, Any]) -> Dict[str, Any]:
-        """编辑 AI 模型"""
-        return self._request('POST', '/api/business/ai/editModel', json_data=model_data)
-
-    def enable_model(self, model_id: str, enabled: bool) -> Dict[str, Any]:
-        """启用/禁用 AI 模型"""
-        safe_id = self._sanitize_param(model_id, 'safe')
-        enabled_str = 'true' if enabled else 'false'
-        return self._request('POST', '/api/business/ai/enableModel',
-                            headers={'id': safe_id, 'enabled': enabled_str})
 
     # 设备管理
     def get_device_page(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
@@ -2222,16 +2134,40 @@ class LynseAPI:
         return self._request('GET', '/api/business/device/mine')
 
     def get_device_info(self, device_id: str) -> Dict[str, Any]:
-        """获取设备详情"""
+        """从当前用户的绑定设备列表中获取设备详情。"""
         safe_id = self._sanitize_param(device_id, 'safe')
-        return self._request('GET', '/api/business/deviceMgt/info5',
-                            headers={'id': safe_id})
+        response = self.get_my_devices()
+        devices = response.get('data') if isinstance(response, dict) else None
+        devices = devices if isinstance(devices, list) else []
+        for device in devices:
+            if not isinstance(device, dict):
+                continue
+            identifiers = (
+                device.get('id'),
+                device.get('serialNumber'),
+                device.get('authSn'),
+                device.get('macAddress'),
+            )
+            if safe_id in {str(value) for value in identifiers if value not in (None, '')}:
+                return {
+                    'code': response.get('code', 200),
+                    'msg': response.get('msg', 'SUCCESS'),
+                    'data': device,
+                }
+        raise LynseAPIError('Device not found.', http_code=404)
 
     def unbind_device(self, device_id: str) -> Dict[str, Any]:
-        """解绑设备"""
-        safe_id = self._sanitize_param(device_id, 'safe')
-        return self._request('POST', '/api/business/deviceMgt/unbind',
-                            headers={'id': safe_id})
+        """按设备 ID/SN/MAC 解析绑定设备，并使用 MAC 地址解绑。"""
+        device = self.get_device_info(device_id).get('data')
+        mac_address = device.get('macAddress') if isinstance(device, dict) else None
+        if not mac_address:
+            raise LynseAPIError('Device has no MAC address and cannot be unbound.')
+        safe_mac = self._sanitize_param(str(mac_address), 'safe')
+        return self._request(
+            'GET',
+            '/api/business/device/unbind',
+            params={'macAddress': safe_mac},
+        )
 
     # 用户管理
     def get_current_user(self) -> Dict[str, Any]:
@@ -2303,7 +2239,7 @@ def _print_help():
             ("meetings transcript <id>", "Get meeting transcription"),
             ("meetings transcript-text <id>", "Get meeting transcription text"),
             ("meetings audio <id>", "Get meeting audio download metadata"),
-            ("meetings summary <id>", "Get AI summary"),
+            ("meetings summary <id> [--all]", "Get first AI summary (or all with --all)"),
             ("meetings outline <id>", "Get meeting outline"),
             ("meetings info <id>", "Get meeting details"),
             ("meetings organize [--execute] [--yes]", "Auto-classify meetings into folders (dry-run by default)"),
@@ -2313,21 +2249,21 @@ def _print_help():
             ("folders create <json>", "Create a folder"),
             ("folders move <json>", "Move files to folder"),
             ("folders count", "Count files in each folder"),
-            ("folders delete <ids>", "Delete folders"),
+            ("folders delete <ids>", "Delete only server-verified empty folders"),
         ]),
         ("Todos", [
             ("todos list [status] [page] [size]", "List todos (all/open/done)"),
             ("todos delete <ids>", "Delete todos"),
             ("todos clear", "Clear completed todos"),
-            ("todos add <content> [owner] [deadline]", "Create a todo"),
             ("todos reschedule <id> <deadline>", "Change a todo deadline"),
         ]),
-        ("Devices & Models", [
+        ("Devices", [
             ("devices list", "List bound devices"),
-            ("models list", "List AI models"),
+            ("devices info <id>", "Get bound device details"),
+            ("devices unbind <id>", "Unbind a device"),
         ]),
         ("Auth", [
-            ("auth login --api-key <key>", "Save API key & validate"),
+            ("auth login [--host <url>]", "Prompt securely for API key and validate"),
             ("auth status", "Show auth configuration"),
             ("auth logout [--all]", "Clear cached tokens"),
             ("auth doctor", "Diagnose auth issues"),
@@ -2475,7 +2411,7 @@ def _handle_auth_command(subcommand: str, args: list, flags: dict):
         ucfg = _load_user_config()
         host, key, _ = _resolve_api_credentials(user_config=ucfg)
         _check('API host configured', bool(host), host or 'not set')
-        _check('API key configured', bool(key), f"{key[:6]}..." if len(key) > 6 else ('not set' if not key else key))
+        _check('API key configured', bool(key), 'configured' if key else 'not set')
         if host and key:
             try:
                 resp = requests.get(host, timeout=5)
@@ -2498,6 +2434,11 @@ def _handle_auth_command(subcommand: str, args: list, flags: dict):
                 _check('Token exchange', False, str(e))
         all_ok = all(c['ok'] for c in checks)
         print(f"\nResult: {'All checks passed' if all_ok else 'Some checks failed'}", file=sys.stderr)
+        _format_output(
+            {'status': 'ok' if all_ok else 'error', 'checks': checks},
+            'auth_doctor',
+            flags,
+        )
         sys.exit(EXIT_SUCCESS if all_ok else EXIT_INVALID)
         return
 
@@ -2523,13 +2464,6 @@ def main():
     # 3. 解析命令与别名
     command, args, is_alias = _resolve_alias(cli_args[0], cli_args[1:])
     display_command = _ALIAS_INFO.get(command, command)
-
-    if LynseAPI._lynse_debug_enabled():
-        print(
-            f"[{_lynse_log_ts()}] [lynse-cli] invoke command={command} "
-            f"(alias={is_alias}) arg_count={len(args)}",
-            file=sys.stderr, flush=True,
-        )
 
     try:
         # 4. 本地命令（不需要 API 实例）
@@ -2585,8 +2519,7 @@ def main():
             host = os.environ.get('LYNSE_API_HOST') or ucfg.get('api_host') or ''
             key = os.environ.get('LYNSE_API_KEY') or ucfg.get('api_key') or ''
             _check('API host configured', bool(host), host[:40] if host else 'not set')
-            masked_key = f"{key[:6]}..." if len(key) > 6 else ''
-            _check('API key configured', bool(key), masked_key if key else 'not set')
+            _check('API key configured', bool(key), 'configured' if key else 'not set')
             if host:
                 try:
                     resp = requests.get(host, timeout=5)
@@ -2616,6 +2549,11 @@ def main():
                 _check('Token cache writable', False, str(e)[:80])
             all_ok = all(c['ok'] for c in checks)
             print(f"\nResult: {'All checks passed ✓' if all_ok else 'Some checks failed ✗'}", file=sys.stderr)
+            _format_output(
+                {'status': 'ok' if all_ok else 'error', 'checks': checks},
+                command,
+                flags,
+            )
             sys.exit(EXIT_SUCCESS if all_ok else EXIT_INVALID)
             return
 

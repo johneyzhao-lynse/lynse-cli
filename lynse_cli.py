@@ -184,24 +184,6 @@ class LynseUnifiedCLI:
                 if not args:
                     print("Error: editSpeakerInfo requires JSON data", file=sys.stderr); return EXIT_INVALID
                 result = self.api.edit_speaker_info(json.loads(args[0]))
-            elif command == 'getAiModels':
-                result = self.api.get_ai_models()
-            elif command == 'addModel':
-                if not args:
-                    print("Error: addModel requires JSON data", file=sys.stderr); return EXIT_INVALID
-                result = self.api.add_model(json.loads(args[0]))
-            elif command == 'deleteModel':
-                if not args:
-                    print("Error: deleteModel requires a model ID", file=sys.stderr); return EXIT_INVALID
-                result = self.api.delete_model(args[0])
-            elif command == 'editModel':
-                if not args:
-                    print("Error: editModel requires JSON data", file=sys.stderr); return EXIT_INVALID
-                result = self.api.edit_model(json.loads(args[0]))
-            elif command == 'enableModel':
-                if len(args) < 2:
-                    print("Error: enableModel requires model ID and true/false", file=sys.stderr); return EXIT_INVALID
-                result = self.api.enable_model(args[0], args[1].lower() in ('true', '1', 'yes'))
             elif command == 'getDevicePage':
                 page = int(args[0]) if args else 1
                 result = self.api.get_device_page(page)
@@ -312,7 +294,6 @@ class LynseUnifiedCLI:
             'getFileInfo', 'getConclusion', 'getOutline', 'exportOutline',
             'getTranscriptionRecord', 'getTranscriptionText', 'renameSpeaker', 'editSpeakerInfo',
             'listFolders', 'createFolder', 'changeFolder',
-            'getAiModels', 'addModel', 'deleteModel', 'editModel', 'enableModel',
             'getMyDevices', 'getDevicePage', 'getDeviceInfo', 'unbindDevice',
             'getCurrentUser', 'addUser', 'editUser', 'removeUser',
             'login', 'loginWithPhone', 'logout', 'sendSms', 'sendEmail',

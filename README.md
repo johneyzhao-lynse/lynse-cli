@@ -17,7 +17,6 @@
 - 📁 **智能整理** - 自动分类会议到文件夹
 - ✅ **待办管理** - 管理和清理待办事项
 - 📱 **设备管理** - 管理绑定设备
-- 🔧 **AI 模型** - 配置和管理 AI 模型
 - 🔌 **MCP 服务** - 已拆分到独立仓库 [lynse-mcp](https://github.com/lynse-ai/lynse-mcp)
 
 ## 🚀 快速开始
@@ -35,7 +34,7 @@ npx skills add lynse-ai/lynse-cli
 npm install -g @lynse.ai/lynse-cli
 
 # Python 项目复用同一 API 客户端
-python3 -m pip install "git+https://github.com/lynse-ai/lynse-cli.git@v1.7.0"
+python3 -m pip install "git+https://github.com/lynse-ai/lynse-cli.git@v1.8.0"
 
 # 或使用安装脚本
 # macOS/Linux
@@ -64,7 +63,7 @@ lynse me
 lynse meetings list
 
 # 获取会议总结
-lynse meetings summary <会议ID>
+lynse meetings summary <会议ID>            # 默认返回第一篇；--all 返回全部总结
 
 # 整理会议到文件夹
 lynse meetings organize --execute
@@ -92,7 +91,7 @@ lynse meetings search 关键词          # 搜索会议
 
 ### 2. AI 智能功能
 ```bash
-lynse meetings summary <ID>            # 获取 AI 总结
+lynse meetings summary <ID>            # 获取第一篇 AI 总结（--all 获取全部）
 lynse meetings outline <ID>           # 获取会议大纲
 lynse meetings transcript <ID>        # 获取完整转写
 lynse meetings audio <ID>             # 获取音频下载信息
@@ -108,7 +107,6 @@ lynse meetings organize --execute      # 执行整理
 ```bash
 lynse todos list                       # 查看待办
 lynse todos clear                      # 清理已完成
-lynse todos add "整理复盘"             # 新增待办
 lynse todos reschedule <ID> 2026-08-15 # 调整截止时间
 ```
 

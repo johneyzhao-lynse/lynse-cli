@@ -1,0 +1,66 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Validate tag and package version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION=${GITHUB_REF_NAME#v}
+          echo "tag=$TAG_VERSION package=$PACKAGE_VERSION"
+          test "$TAG_VERSION" = "$PACKAGE_VERSION"
+
+      - name: Check package contents
+        run: npm pack --dry-run
+
+      - name: Check registry
+        id: registry
+        run: |
+          PACKAGE_SPEC=$(node -p "require('./package.json').name + '@' + require('./package.json').version")
+          if npm view "$PACKAGE_SPEC" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "$PACKAGE_SPEC is already published; nothing to do."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify npm credentials
+        if: steps.registry.outputs.published == 'false'
+        run: |
+          test -n "$NODE_AUTH_TOKEN"
+          npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to npm
+        if: steps.registry.outputs.published == 'false'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify published version
+        run: |
+          PACKAGE_SPEC=$(node -p "require('./package.json').name + '@' + require('./package.json').version")
+          npm view "$PACKAGE_SPEC" version

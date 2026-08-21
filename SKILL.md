@@ -1,14 +1,14 @@
 ---
 name: lynse-cli
 description: >
-  Lynse CLI skill for querying meeting transcriptions, managing files, todos, devices, and AI models
+  Lynse CLI skill for querying meeting transcriptions, managing files, todos, and devices
   via the lynse.ai API. Lynse is the English product context; in Chinese contexts it is called
   灵光记. Use this skill when the user says "Lynse", "lynse-cli", "灵光记", or asks to use
   灵光记, including requests about meetings, transcriptions, summaries, todos,
-  file/folder management, account info, points balance, device binding, AI model configuration, or
-  any Lynse platform operations. Trigger on: meeting, transcription, summary, todo, device, model,
+  file/folder management, account info, points balance, device binding, or
+  any Lynse platform operations. Trigger on: meeting, transcription, summary, todo, device,
   points, file, folder, auth, lynse, Lynse, lynse-cli, 灵光记, 使用灵光记, 用灵光记, 会议, 转写,
-  总结, 待办, 设备, 模型, 积分, 文件.
+  总结, 待办, 设备, 积分, 文件.
   Do NOT use for: generic calendar apps, Zoom/Teams recordings unrelated to Lynse, local file
   system operations, or other platforms that merely share these common words.
 license: MIT
@@ -16,7 +16,7 @@ allowed-tools: Bash(python3:*), Bash(python:*), Bash(py:*)
 metadata:
   slug: lynse-cli
   displayName: 灵光记 / Lynse CLI
-  version: 1.7.0
+  version: 1.8.0
   openclaw:
     requires:
       env:
@@ -75,7 +75,7 @@ python3 lynse.py meetings search <keyword>             # Search by title
 python3 lynse.py meetings transcript <id>              # Get transcription
 python3 lynse.py meetings transcript-text <id>         # Get transcription text
 python3 lynse.py meetings audio <id>                   # Get audio download metadata
-python3 lynse.py meetings summary <id>                 # Get AI summary
+python3 lynse.py meetings summary <id> [--all]         # Get first AI summary; --all returns every summary
 python3 lynse.py meetings outline <id>                 # Get outline
 python3 lynse.py meetings info <id>                    # Meeting details
 python3 lynse.py meetings organize [--days N] [--execute] [--yes]   # Auto-classify meetings into folders (dry-run by default; --execute applies)
@@ -83,20 +83,14 @@ python3 lynse.py folders list                          # List folders/groups
 python3 lynse.py folders create <json>                 # Create folder
 python3 lynse.py folders move <json>                   # Move files to folder
 python3 lynse.py folders count                         # Count files by folder
-python3 lynse.py folders delete <ids>                  # Delete folders
+python3 lynse.py folders delete <ids>                  # Delete server-verified empty folders only
 python3 lynse.py todos list [all|open|done]            # List todos
 python3 lynse.py todos delete <ids>                    # Delete todos
 python3 lynse.py todos clear                           # Clear completed todos
-python3 lynse.py todos add <content> [owner] [deadline] # Create todo
 python3 lynse.py todos reschedule <id> <deadline>      # Change todo deadline
 python3 lynse.py devices list                          # List bound devices
 python3 lynse.py devices info <id>                     # Device details
 python3 lynse.py devices unbind <id>                   # Unbind device
-python3 lynse.py models list                           # List AI models
-python3 lynse.py models add <json>                     # Add model
-python3 lynse.py models delete <id>                    # Delete model
-python3 lynse.py models edit <json>                    # Edit model
-python3 lynse.py models enable <id> <bool>             # Enable/disable model
 ```
 
 **Date query flexibility** (`meetings month`/`week`):
@@ -114,6 +108,12 @@ python3 lynse.py meetings organize --days 90             # Plan only for the las
 python3 lynse.py meetings organize --execute --yes       # Apply: create folders + move meetings (non-interactive)
 ```
 Classifies meetings (with a summary) into topic folders by title, **reusing existing folders** where they match and creating new ones (icon + ≤6-char name) otherwise; caps at 10 folders + 🗂其他. Default is a safe **dry-run**. `--execute` applies changes; in a non-interactive/agent context it **requires `--yes`** (it refuses otherwise). Meetings without a summary are listed but not moved unless `--include-no-conclusion` is given.
+
+**Folder deletion safety** (`folders delete`):
+- Every target ID must exist and be confirmed empty from fresh service data immediately before deletion.
+- Prefer `folderStats[].count == 0`. Because the service may omit empty folders from `folderStats`, an omitted target is checked against the complete paginated server file inventory; any matching `folderId` blocks deletion.
+- If any target is non-empty, unknown, has an invalid count, or cannot be verified, the entire batch is rejected and no `DELETE` request is sent.
+- Never infer emptiness from a local organization plan, cached folder state, or completed move records.
 
 ### Auth & System
 

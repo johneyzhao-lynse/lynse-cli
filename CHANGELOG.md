@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.8.0 (2026-08-21)
+
+### New Features
+
+- Return the first meeting summary by default; add `meetings summary <id> --all` to return every summary record.
+- Allow folder deletion only after every requested folder is confirmed empty using fresh server folder counts and, when needed, the complete paginated file inventory.
+
+### Bug Fixes
+
+- Send folder move and delete IDs in the comma-separated query format expected by the service.
+- Resolve device details from the current user's bound-device list and unbind through the current MAC-address endpoint.
+- Make doctor commands emit structured output while keeping API keys completely out of diagnostics.
+
+### Changed
+
+- Remove unsupported AI model management, todo creation, and request debug-log commands from the public CLI surface and documentation.
+- Restore npm publishing on `v*` tag pushes, with tag/package version validation, package-content checks, credential validation, and registry verification.
+
 ## 1.7.0 (2026-08-12)
 
 ### New Features

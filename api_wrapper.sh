@@ -173,9 +173,6 @@ case $ACTION in
     "getMyDevices")
         curl -s -X GET "$API_HOST/api/business/device/mine" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
         ;;
-    "getAiModels")
-        curl -s -X GET "$API_HOST/api/business/ai/getAllAIModelList" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
-        ;;
     "getUserPoints")
         RESPONSE=$(curl -s -X GET "$API_HOST/api/business/customer/current" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY")
         POINTS=$(echo "$RESPONSE" | grep -o '"pointsAmount":[0-9]*' | cut -d: -f2)
@@ -230,23 +227,6 @@ case $ACTION in
     "getTranscriptionRecord")
         SAFE_ID=$(echo "$1" | tr -cd '0-9')
         curl -s -X GET "$API_HOST/api/business/file/trans/get?fileId=$SAFE_ID" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY"
-        ;;
-
-    # AI模型管理（接受JSON body的接口，使用文件传递而非命令行拼接）
-    "addModel")
-        echo "$PARAMS" | curl -s -X POST "$API_HOST/api/business/ai/addModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d @-
-        ;;
-    "deleteModel")
-        SAFE_ID=$(sanitize_header_value "$1")
-        curl -s -X DELETE "$API_HOST/api/business/ai/deleteModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$SAFE_ID"
-        ;;
-    "editModel")
-        echo "$PARAMS" | curl -s -X POST "$API_HOST/api/business/ai/editModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d @-
-        ;;
-    "enableModel")
-        SAFE_ID=$(sanitize_header_value "$1")
-        SAFE_ENABLED=$(echo "$2" | tr -cd 'a-zA-Z')
-        curl -s -X POST "$API_HOST/api/business/ai/enableModel" -H "Authorization: $TOKEN" -H "X-API-Key: $API_KEY" -H "id:$SAFE_ID" -H "enabled:$SAFE_ENABLED"
         ;;
 
     # 设备管理
@@ -308,7 +288,7 @@ case $ACTION in
     # 默认情况
     *)
         echo "Error: 不支持的 Action $ACTION。" >&2
-        echo "支持的操作包括: getCurrentCustomer, getUserInfo, getDevicePage, getAiModels, getUserPoints, getUserPhone, listFiles, getFileInfo, getConclusion, getConclusionList, getOutline, exportOutline, getTranscriptionRecord, addModel, deleteModel, editModel, enableModel, getDeviceInfo, unbindDevice, getCurrentUser, addUser, editUser, removeUser, login, loginWithPhone, logout, sendSms, sendEmail, getRoleList, getMenuTree" >&2
+        echo "支持的操作包括: getCurrentCustomer, getUserInfo, getDevicePage, getUserPoints, getUserPhone, listFiles, getFileInfo, getConclusion, getConclusionList, getOutline, exportOutline, getTranscriptionRecord, getDeviceInfo, unbindDevice, getCurrentUser, addUser, editUser, removeUser, login, loginWithPhone, logout, sendSms, sendEmail, getRoleList, getMenuTree" >&2
         exit 1
         ;;
 esac

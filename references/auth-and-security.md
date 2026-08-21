@@ -72,3 +72,4 @@ transient — they do **not** mean your key is wrong.
 ### Input safety
 - All user inputs are sanitized against injection
 - Space create/edit operations by 1+ minute to avoid server rate limits
+- Before deleting folders, verify every target against fresh server-side folder counts; if an empty folder is omitted from the count response, confirm it has no matching `folderId` in the complete paginated server file inventory. Reject the whole batch when any target cannot be verified empty.
